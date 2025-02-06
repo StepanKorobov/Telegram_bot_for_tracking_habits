@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../database')))
-from database.models import sessions, create_tables, add_users
+from database.database import sessions, create_tables, add_users
 
 router = APIRouter()
 
