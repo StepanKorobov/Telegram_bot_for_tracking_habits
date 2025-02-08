@@ -17,14 +17,14 @@ async def register():
     return {"message": "Hello World"}
 
 
-@router.get("/auth/token")
-async def user_me() -> JSONResponse:
-    return JSONResponse({"message": "Hello World"})
-
-
 @router.get("/auth/login")
 async def user_login():
     return {"message": "Hello World"}
+
+
+@router.get("/auth/token")
+async def user_me() -> JSONResponse:
+    return JSONResponse({"message": "Hello World"})
 
 
 @router.get("/auth/refresh_token")
