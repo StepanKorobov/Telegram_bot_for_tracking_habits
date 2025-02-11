@@ -19,7 +19,7 @@ Base: DeclarativeMeta = declarative_base()
 
 # session = async_session()
 
-async def sessions() -> AsyncSession:
+async def get_session() -> AsyncSession:
     """Корутина для создания асинхронной сессии"""
     async with async_session() as session:
         yield session
@@ -39,7 +39,7 @@ class Users(Base):
 
     # Определяем поля таблицы
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(String(64), nullable=False)
+    username: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     telegram_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(100), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

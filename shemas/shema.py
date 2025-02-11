@@ -13,12 +13,12 @@ class TokenData(BaseModel):
 class User(BaseModel):
     id: int
     username: str
-    telegram_id: str
+    telegram_id: int
     is_active: bool | None = None
 
 
 class UserInDB(User):
-    hashed_password: str
+    password: str
 
 
 class UserIn(BaseModel):
