@@ -1,15 +1,17 @@
+from database.database import engine, Base
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import FastAPI
-
-from routers import auth, user
 from database.database import create_tables
+from routers import auth, user
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Эвент-менеджер для выполнения кода до и после запуска приложения (создаёт таблицы в БД перед запуском приложения)"""
+    """Эвент для выполнения кода перед запуском приложения"""
     await create_tables()
+
     yield
 
 
@@ -29,3 +31,6 @@ app.include_router(
     prefix="/api",
     tags=["auth"],
 )
+
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -8,19 +8,16 @@ from sqlalchemy.orm import (
     sessionmaker, relationship,
 )
 from sqlalchemy.orm.decl_api import DeclarativeMeta
-from sqlalchemy.engine.result import ChunkedIteratorResult
-from sqlalchemy.future import select
 import datetime
 from typing import List, Optional
 
-DATABASE_URL: str = "postgresql+asyncpg://admin:admin@database:5432/telegram"
+DATABASE_URL: str = "postgresql+asyncpg://admin:admin@127.0.0.1:5432/telegram"
 engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=True)
 async_session: sessionmaker = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 Base: DeclarativeMeta = declarative_base()
 
 
 # session = async_session()
-
 
 async def sessions() -> AsyncSession:
     """Корутина для создания асинхронной сессии"""
@@ -42,10 +39,10 @@ class Users(Base):
 
     # Определяем поля таблицы
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user: Mapped[str] = mapped_column(String(50), nullable=False)
+    username: Mapped[str] = mapped_column(String(50), nullable=False)
     telegram_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    password: Mapped[int] = mapped_column(String(50), nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    password: Mapped[str] = mapped_column(String(50), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     # Определяем связь One-to-Many с таблицей Habits
     habits: Mapped[Optional["Habits"]] = relationship(back_populates="user", cascade="all, delete-orphan")
