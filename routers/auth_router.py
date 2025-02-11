@@ -121,6 +121,34 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return encoded_jwt
 
 
+def create_refresh_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """
+    Функция для создания refresh токена
+
+    :param data: Данные о пользователе
+    :type data: dict
+    :param expires_delta: Время жизни токена
+    :type expires_delta: timedelta | None
+    :return: jwt токен
+    :rtype: str
+    """
+
+    # Копируем данные
+    to_encode: dict = data.copy()
+    # Проверяем указанно ли время жизни токена, если нет, устанавливаем 7 дней
+    if expires_delta:
+        expire: datetime = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire: datetime = datetime.now(timezone.utc) + timedelta(days=7)
+    # Добавляем время жизни токена к данным
+    to_encode.update({"exp": expire})
+    # Создаём jwt токен
+    encoded_jwt: str = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+    # Возвращаем jwt токен
+    return encoded_jwt
+
+
 async def get_current_user(
         token: Annotated[str, Depends(oauth2_scheme)],
         session: AsyncSession = Depends(get_session)
@@ -192,6 +220,13 @@ async def login_for_access_token(
 ) -> Token:
     """
     Эндпоинт принимает логин и пароль, возвращая token
+
+    :param form_data: Логин и пароль
+    :type form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    :param session: Асинхронная сессия
+    :type session: AsyncSession
+    :return: access токен, refresh токен, тип токена
+    :rtype: Token
     """
 
     # Аутентифицируем пользователя
@@ -203,19 +238,51 @@ async def login_for_access_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    # Задаём время жизни jwt токена
+    # Задаём время жизни jwt access токена
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    # Создаём jwt токен
+    # Создаём jwt access токен
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.username, "telegram_id": user.telegram_id}, expires_delta=access_token_expires
     )
-    # Возвращаем jwt токен
-    return Token(access_token=access_token, token_type="bearer")
+
+    # Задаём время жизни jwt refresh токена
+    refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_DAYS)
+    # Создаём jwt refresh токен
+    refresh_token = create_refresh_token(
+        data={"sub": user.username, "telegram_id": user.telegram_id}, expires_delta=refresh_token_expires
+    )
+
+    # Возвращаем jwt access и refresh токены
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @router.get("/auth/refresh_token")
-async def refresh_token(current_user: Annotated[User, Depends(get_current_active_user)]):
-    return current_user
+async def refresh_token(user: Annotated[User, Depends(get_current_active_user)]) -> Token:
+    """
+    Эндпоинт для обновления access токена при помощи refresh токена
+
+    :param user: Получаем данные о текущем пользователе
+    :type user: Annotated[User, Depends(get_current_active_user)]
+    :return: access токен, refresh токен, тип токена
+    :rtype: Token
+    """
+
+    # Задаём время жизни jwt access токена
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Создаём jwt access токен
+    access_token = create_access_token(
+        data={"sub": user.username, "telegram_id": user.telegram_id}, expires_delta=access_token_expires
+    )
+
+    # Задаём время жизни jwt refresh токена
+    refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_DAYS)
+    # Создаём jwt refresh токен
+    refresh_token = create_refresh_token(
+        data={"sub": user.username, "telegram_id": user.telegram_id}, expires_delta=refresh_token_expires
+    )
+
+    # Возвращаем jwt access и refresh токены
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 # async def user_login(current_user: Annotated[User, Depends(get_current_user)]):
