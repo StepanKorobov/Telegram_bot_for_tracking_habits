@@ -193,6 +193,7 @@ async def login_for_access_token(
     """
     Эндпоинт принимает логин и пароль, возвращая token
     """
+
     # Аутентифицируем пользователя
     user = await authenticate_user(session, form_data.username, form_data.password)
     # Если аутентификация не успешна, выкидываем исключение
@@ -210,6 +211,11 @@ async def login_for_access_token(
     )
     # Возвращаем jwt токен
     return Token(access_token=access_token, token_type="bearer")
+
+
+@router.get("/auth/refresh_token")
+async def refresh_token(current_user: Annotated[User, Depends(get_current_active_user)]):
+    return current_user
 
 
 # async def user_login(current_user: Annotated[User, Depends(get_current_user)]):
@@ -234,11 +240,6 @@ async def user_login(
         status_code=status.HTTP_409_CONFLICT,
         detail="This user already exists",
     )
-
-
-@router.post("/auth/refresh_token")
-async def refresh_token(user: UserIn):
-    pass
 
 
 @router.get("/users/me/", response_model=UserInDB)
