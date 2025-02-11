@@ -6,6 +6,13 @@ from fastapi import FastAPI
 from database.database import create_tables
 from routers import auth, user
 
+tags_metadata = [
+    {
+        "name": "auth",
+        "description": "Набор методов для регистрации и получения токенов.",
+    }
+]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,7 +23,13 @@ async def lifespan(app: FastAPI):
 
 
 # Создаём экземпляр класса приложения с настройками
-app: FastAPI = FastAPI(title="Habits app", lifespan=lifespan)
+app: FastAPI = FastAPI(
+    title="Habits app",
+    description="Api для хранения данных о привычках пользователей",
+    version="0.1.0",
+    lifespan=lifespan,
+    openapi_tags=tags_metadata
+)
 
 # Роут
 app.include_router(

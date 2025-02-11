@@ -38,14 +38,17 @@ class Users(Base):
     __tablename__ = "users"
 
     # Определяем поля таблицы
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    username: Mapped[str] = mapped_column(String(50), nullable=False)
-    telegram_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    password: Mapped[str] = mapped_column(String(50), nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(64), nullable=False)
+    telegram_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
+    password: Mapped[str] = mapped_column(String(100), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     # Определяем связь One-to-Many с таблицей Habits
-    habits: Mapped[Optional["Habits"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    habits: Mapped[Optional["Habits"]] = relationship(back_populates="user", cascade="all")
+
+    def to_json(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class Habits(Base):
@@ -58,13 +61,13 @@ class Habits(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     habit_name: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey(Users.id), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     # Определяем связь Many-to-One с таблицей Users
-    user: Mapped[List["Users"]] = Relationship(back_populates="habits", cascade="all, delete-orphan")
+    user: Mapped[List["Users"]] = Relationship(back_populates="habits", cascade="all")
     # # Определяем связь One-to-Many с таблицей HabitTracking
     habit_tracking: Mapped[Optional["HabitTracking"]] = relationship(back_populates="habits",
-                                                                     cascade="all, delete-orphan")
+                                                                     cascade="all")
 
 
 class HabitTracking(Base):
@@ -77,7 +80,7 @@ class HabitTracking(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     alert_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     count: Mapped[int] = mapped_column(Integer, nullable=False)
-    habits_id: Mapped[int] = mapped_column(ForeignKey(Habits.id), nullable=False)
+    habits_id: Mapped[int] = mapped_column(ForeignKey("habits.id"), nullable=False)
 
     # Определяем связь Many-to-One с таблицей Habits
-    habits: Mapped[List["Habits"]] = Relationship(back_populates="habit_tracking", cascade="all, delete-orphan")
+    habits: Mapped[List["Habits"]] = Relationship(back_populates="habit_tracking", cascade="all")
