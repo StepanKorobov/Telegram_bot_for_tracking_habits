@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from database.database import create_tables
-from routers import auth, user
+from routers import auth_router, user_router
 
 tags_metadata = [
     {
@@ -33,14 +33,14 @@ app: FastAPI = FastAPI(
 
 # Роут
 app.include_router(
-    user.router,
+    user_router.router,
     prefix="/api",
     tags=["users"],
 )
 
 # Роут для работы с авторизацией и аутентификацией
 app.include_router(
-    auth.router,
+    auth_router.router,
     prefix="/api",
     tags=["auth"],
 )

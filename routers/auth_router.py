@@ -10,13 +10,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.util import await_only
 
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../database')))
-from shemas.shema import User, UserInDB, Token, TokenData, UserIn, UserOut
+from shemas.auth_shemas import User, UserInDB, Token, TokenData, UserIn, UserOut
 from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import get_session, Users
-from database.models import check_user_exist, write_user, get_user
+from database.auth_models import check_user_exist, write_user, get_user
 
 # Секретный ключ, для подписания токена jwt
 SECRET_KEY = "29f9d7c10178d852330fa3b08119de20cabe644b8403c022c16ce750e1a51dc3"
