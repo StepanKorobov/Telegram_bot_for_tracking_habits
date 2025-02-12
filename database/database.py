@@ -69,6 +69,9 @@ class Habits(Base):
     habit_tracking: Mapped[Optional["HabitTracking"]] = relationship(back_populates="habits",
                                                                      cascade="all")
 
+    def to_json(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class HabitTracking(Base):
     """Таблица для уведомлений"""
@@ -84,3 +87,6 @@ class HabitTracking(Base):
 
     # Определяем связь Many-to-One с таблицей Habits
     habits: Mapped[List["Habits"]] = Relationship(back_populates="habit_tracking", cascade="all")
+
+    def to_json(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
