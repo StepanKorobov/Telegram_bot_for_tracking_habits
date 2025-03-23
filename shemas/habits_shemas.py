@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -14,3 +16,18 @@ class Habit(BaseModel):
         max_length=150,
         min_length=1,
     )
+
+
+class HabitsFromIDOut(BaseModel):
+    id: int
+    habit_name: str
+    description: str
+
+
+class HabitsOut(BaseModel):
+    habits: List[HabitsFromIDOut] | None
+
+
+class HabitsCreateOut(BaseModel):
+    result: bool
+    habit_id: int
