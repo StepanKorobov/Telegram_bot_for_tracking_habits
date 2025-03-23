@@ -1,14 +1,14 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shemas.auth_shemas import User
 from routers.auth_router import get_current_active_user
 
-from database.habits_models import get_habits, write_habits
+from models.habits_models import get_habits, write_habits
 from shemas.habits_shemas import Habit
-from database.database import get_session, Users
+from database.database import get_session
 
 router = APIRouter()
 

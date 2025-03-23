@@ -42,7 +42,7 @@ app.include_router(
     tags=["auth"],
 )
 
-# Роут
+# Роут для работы с привычками
 app.include_router(
     habits_router.router,
     prefix="/api",
