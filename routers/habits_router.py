@@ -6,14 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shemas.auth_shemas import User
 from routers.auth_router import get_current_active_user
 
-from models.habits_models import get_all_habit, write_habits, get_habit_by_id
-from shemas.habits_shemas import Habit, HabitsOut, HabitsCreateOut, HabitsFromIDOut
+from models.habits_models import get_all_habit, write_habits, get_habit_by_id, update_habit, delete_habit
+from shemas.habits_shemas import Habit, HabitsListOut, HabitsCreateOut, HabitsOut, HabitUpdate
 from database.database import get_session, Habits
 
 router = APIRouter()
 
 
-@router.get("/habits", response_model=HabitsOut)
+@router.get("/habits", response_model=HabitsListOut)
 async def get_all_habits(
         current_user: Annotated[User, Depends(get_current_active_user)],
         session: AsyncSession = Depends(get_session)) -> JSONResponse:
@@ -55,7 +55,7 @@ async def add_habits(current_user: Annotated[User, Depends(get_current_active_us
     return JSONResponse(status_code=status.HTTP_201_CREATED, content={"result": True, "habit_id": habit})
 
 
-@router.get("/habits/{habit_id}", response_model=HabitsFromIDOut)
+@router.get("/habits/{habit_id}", response_model=HabitsOut)
 async def get_habits_by_id(habit_id: int,
                            current_user: Annotated[User, Depends(get_current_active_user)],
                            session: AsyncSession = Depends(get_session)):
@@ -69,6 +69,7 @@ async def get_habits_by_id(habit_id: int,
     :param session: Асинхронная сессия
     :type session: AsyncSession
     :return: ID, название, описание привычки
+    :rtype: JSONResponse
     """
     habit = await get_habit_by_id(habit_id=habit_id, session=session)
 
@@ -84,19 +85,73 @@ async def get_habits_by_id(habit_id: int,
     return JSONResponse(status_code=status.HTTP_200_OK, content=habit)
 
 
-@router.put("/habits/{habit_id}")
+@router.put("/habits/{habit_id}", response_model=HabitsCreateOut)
 async def update_habits(habit_id: int,
-                        current_user: Annotated[User, Depends(get_current_active_user)], ):
-    pass
+                        habit: Habit,
+                        current_user: Annotated[User, Depends(get_current_active_user)],
+                        session: AsyncSession = Depends(get_session)) -> JSONResponse:
+    """
+    Эндпоинт для обновления привычки
+
+    :param habit_id: ID привычки
+    :type habit_id: int
+    :param habit: Название и описание привычки
+    :type habit: Habits
+    :param current_user: Текущий пользователь
+    :type current_user: Annotated[User, Depends(get_current_active_user)]
+    :param session: Асинхронная сессия
+    :type session: AsyncSession
+    :return: Результат и id привычки
+    :rtype: JSONResponse
+    """
+
+    await update_habit(habit_id=habit_id, habit=habit, user_id=current_user.id, session=session)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True, "habit_id": habit_id})
 
 
 @router.patch("/habits/{habit_id}")
 async def partial_update_habits(habit_id: int,
-                                current_user: Annotated[User, Depends(get_current_active_user)], ):
-    pass
+                                habit: HabitUpdate,
+                                current_user: Annotated[User, Depends(get_current_active_user)],
+                                session: AsyncSession = Depends(get_session)) -> JSONResponse:
+    """
+    Эндпоинт для частичного обновления привычки
+
+    :param habit_id: ID привычки
+    :type habit_id: int
+    :param habit: Название и описание привычки
+    :type habit: Habits
+    :param current_user: Текущий пользователь
+    :type current_user: Annotated[User, Depends(get_current_active_user)]
+    :param session: Асинхронная сессия
+    :type session: AsyncSession
+    :return: Результат и id привычки
+    :rtype: JSONResponse
+    """
+
+    await update_habit(habit_id=habit_id, habit=habit, user_id=current_user.id, session=session)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True, "habit_id": habit_id})
 
 
 @router.delete("/habits/{habit_id}")
 async def delete_habits(habit_id: int,
-                        current_user: Annotated[User, Depends(get_current_active_user)], ):
-    pass
+                        current_user: Annotated[User, Depends(get_current_active_user)],
+                        session: AsyncSession = Depends(get_session)) -> JSONResponse:
+    """
+    Эндпоинт для даления привычки
+
+    :param habit_id: ID привычки
+    :type habit_id: int
+    :param current_user: Текущий пользователь
+    :type current_user: Annotated[User, Depends(get_current_active_user)]
+    :param session: Асинхронная сессия
+    :type session: AsyncSession
+    :return: Результат и id привычки
+    :rtype: JSONResponse
+    """
+
+    await delete_habit(habit_id=habit_id, user_id=current_user.id, session=session)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True})

@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class Habit(BaseModel):
@@ -18,16 +18,25 @@ class Habit(BaseModel):
     )
 
 
-class HabitsFromIDOut(BaseModel):
-    id: int
-    habit_name: str
-    description: str
+class HabitsOut(Habit):
+    id: int = Field(..., gt=0)
 
 
-class HabitsOut(BaseModel):
-    habits: List[HabitsFromIDOut] | None
+class HabitsListOut(BaseModel):
+    habits: List[HabitsOut] | None
 
 
 class HabitsCreateOut(BaseModel):
     result: bool
     habit_id: int
+
+
+class HabitUpdate(BaseModel):
+    habit_name: Optional[str] = None
+    description: Optional[str] = None
+
+    @model_validator(mode="before")
+    def check_value(cls, values):
+        if not any(values):
+            raise ValueError("At least one field must be filled in")
+        return values
