@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from database.database import create_tables
-from routers import auth_router, habits_router
+from routers import auth_router, habits_router, habit_tracking_router
 
 tags_metadata = [
     {
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 app: FastAPI = FastAPI(
     title="Habits app",
     description="Api для хранения данных о привычках пользователей",
-    version="0.1.5",
+    version="0.3.1",
     lifespan=lifespan,
     openapi_tags=tags_metadata
 )
@@ -47,6 +47,13 @@ app.include_router(
     habits_router.router,
     prefix="/api",
     tags=["habits"],
+)
+
+# Роут для работы с оповещениями о привычках
+app.include_router(
+    habit_tracking_router.router,
+    prefix="/api",
+    tags=["habit_tracking"],
 )
 
 # if __name__ == "__main__":
