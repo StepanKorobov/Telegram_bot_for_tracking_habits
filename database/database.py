@@ -47,6 +47,9 @@ class Users(Base):
     # Определяем связь One-to-Many с таблицей Habits
     habits: Mapped[Optional["Habits"]] = relationship(back_populates="user", cascade="all")
 
+    def __repr__(self):
+        return f"username: {self.username}, telegram_id: {self.telegram_id}, is_active: {self.is_active}"
+
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
@@ -69,6 +72,9 @@ class Habits(Base):
     habit_tracking: Mapped[Optional["HabitTracking"]] = relationship(back_populates="habits",
                                                                      cascade="all")
 
+    def __repr__(self):
+        return f"habit_name: {self.habit_name}, description: {self.description}, user_id: {self.user_id}"
+
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
@@ -87,6 +93,9 @@ class HabitTracking(Base):
 
     # Определяем связь Many-to-One с таблицей Habits
     habits: Mapped[List["Habits"]] = Relationship(back_populates="habit_tracking")
+
+    def __repr__(self):
+        return f"alert_time: {self.alert_time}, count: {self.count}, habits_id: {self.habits_id}"
 
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
