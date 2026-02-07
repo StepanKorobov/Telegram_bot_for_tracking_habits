@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../database')))
 from shemas.auth_shemas import User, UserInDB, Token, TokenData, UserIn
 from jwt.exceptions import InvalidTokenError
-from passlib.context import CryptContext
+# from passlib.context import CryptContext
+from pwdlib import PasswordHash
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import get_session, Users
@@ -24,7 +25,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 # Контекст для шифрования, мы будем шифровать пароли
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_hash = PasswordHash.recommended()
 
 # Схема для аутентификации
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
@@ -45,7 +47,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     :rtype: bool
     """
 
-    return pwd_context.verify(plain_password, hashed_password)
+    # return pwd_context.verify(plain_password, hashed_password)
+    return password_hash.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
@@ -58,7 +61,8 @@ def get_password_hash(password: str) -> str:
     :rtype: str
     """
 
-    return pwd_context.hash(password)
+    # return pwd_context.hash(password)
+    return password_hash.hash(password)
 
 
 async def authenticate_user(session: AsyncSession, username: str, password: str) -> bool | Users:
