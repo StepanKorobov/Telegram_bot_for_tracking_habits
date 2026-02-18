@@ -1,2 +1,1 @@
-from . import misc
-from . import set_bot_commands
+from . import misc, password_validation, set_bot_commands

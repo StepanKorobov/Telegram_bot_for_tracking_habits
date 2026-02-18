@@ -1,3 +1,3 @@
-from . import start
-from . import help
-from . import echo
+from . import echo, help, start
+
+__all__ = ["start", "help", "echo"]

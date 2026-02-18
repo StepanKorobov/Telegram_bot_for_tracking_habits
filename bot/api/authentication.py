@@ -1,0 +1,59 @@
+from typing import Dict
+
+import requests
+from requests.models import Response
+
+from config_data.config import API_URL
+
+
+def registration_user(telegram_id: int, username: str, password: str) -> bool:
+    """
+    Функция регистрации пользователя в API
+
+    :param telegram_id: Телеграм ID пользователя
+    :type telegram_id: int
+    :param username: Имя пользователя в телеграмме
+    :type username: str
+    :param password: Пароль пользователя
+    :type password: str
+    :return: True or False
+    :rtype: bool
+    """
+
+    data: Dict[str : str | int] = {
+        "telegram_id": telegram_id,
+        "username": username,
+        "password": password,
+    }
+    response: Response = requests.post(f"{API_URL}/api/auth/login", json=data)
+    if response.status_code == 200:
+        return True
+    else:
+        return False
+
+
+def get_token(username: str, password: str) -> Dict[str, str] | None:
+    """
+    Функция для получения токена из API по логину и паролю
+
+    :param username: Имя пользователя в телеграмме
+    :type username: str
+    :param password: Пароль пользователя
+    :type password: str
+    :return: Словарь с токенами | Ничего
+    :rtype: Dict[str, str] | None
+    """
+
+    from_data: Dict[str : str | int] = {
+        "username": username,
+        "password": password,
+    }
+    response: Response = requests.post(f"{API_URL}/api/auth/token", data=from_data)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+
+def refresh_token():
+    pass
