@@ -20,7 +20,7 @@ SECRET_KEY = "29f9d7c10178d852330fa3b08119de20cabe644b8403c022c16ce750e1a51dc3"
 # Алгоритм используемый для подписи jwt
 ALGORITHM = "HS256"
 # Время жизни токена в минутах 30
-ACCESS_TOKEN_EXPIRE_MINUTES = 3000
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # Время жизни токена для обновления jwt
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 

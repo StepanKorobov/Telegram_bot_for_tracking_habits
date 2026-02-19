@@ -1,0 +1,32 @@
+from requests import post
+from requests.models import Response
+from config_data.config import API_URL
+from typing import Dict
+from bot.database.database import User
+
+
+def add_habit_api(user: User, habit_data: Dict) -> bool:
+    """
+    Функция добавления нового пользователя в API
+
+    :param user: Пользователь
+    :type user: User
+    :param habit_data: Словарь с привычкой
+    :type habit_data: Dict
+    :return: True or False
+    :rtype: bool
+    """
+
+    token: str = user.to_json().get("api_token")
+    headers: Dict[str: str] = {
+        "Authorization": f"Bearer {token}",
+    }
+    data: Dict[str: str] = {
+        "habit_name": habit_data["name"],
+        "description": habit_data["description"],
+    }
+    response: Response = post(f"{API_URL}/api/habits", headers=headers, json=data)
+    if response.status_code == 201:
+        return True
+    else:
+        return False

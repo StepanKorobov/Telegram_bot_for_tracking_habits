@@ -40,3 +40,9 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
     api_token: Mapped[str] = mapped_column(String)
     api_token_refresh: Mapped[str] = mapped_column(String)
+
+    def __repr__(self):
+        return f"username: {self.username}, telegram_id: {self.telegram_id}, api_token: {self.api_token}, api_token_refresh: {self.api_token_refresh}"
+
+    def to_json(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
