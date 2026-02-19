@@ -1,7 +1,5 @@
 """Файл для взаимодействия с БД"""
-
-from functools import wraps
-from typing import Union
+from typing import Union, Dict
 
 from bot.database.database import Base, User, get_session
 
@@ -11,33 +9,6 @@ def create_tables():
 
     with get_session() as session:
         Base.metadata.create_all(bind=session)
-
-
-# def with_current_user(func):
-#     @wraps(func)
-#     def wrapper(message, *args, **kwargs):
-#         db = SessionLocal()
-#         try:
-#             tg_id = message.from_user.id
-#             current_user = get_or_create_user(db, tg_id)
-#             # если нужно, можно ещё положить db, но обычно достаточно юзера
-#             return func(message, current_user=current_user, db=db, *args, **kwargs)
-#         finally:
-#             db.close()
-#     return wrapper
-
-
-def with_current_user(func):
-    def wrapper(message, *args, **kwargs):
-        db = 5
-        try:
-            tg_id = message.from_user.id
-            current_user = "enisey"
-            return func(message, current_user=current_user, db=db, *args, **kwargs)
-        finally:
-            a = 5
-
-    return wrapper
 
 
 def get_user_by_telegram_id(telegram_id: int) -> Union[User, None]:
@@ -58,7 +29,7 @@ def get_user_by_telegram_id(telegram_id: int) -> Union[User, None]:
         return user
 
 
-def add_user(username: str, telegram_id: int, api_token, api_token_refresh):
+def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> None:
     """
     Функция добавления нового пользователя
 
@@ -73,6 +44,7 @@ def add_user(username: str, telegram_id: int, api_token, api_token_refresh):
     :return: None
     :rtype: None
     """
+
     with get_session() as session:
         user = User(
             username=username,
@@ -82,4 +54,11 @@ def add_user(username: str, telegram_id: int, api_token, api_token_refresh):
         )
 
         session.add(user)
+        session.commit()
+
+
+def update_user_tokens(user: User, token_data: Dict[str, str]) -> None:
+    with get_session() as session:
+        user.api_token = token_data["api_token"]
+        user.api_token_refresh = token_data["api_token_refresh"]
         session.commit()

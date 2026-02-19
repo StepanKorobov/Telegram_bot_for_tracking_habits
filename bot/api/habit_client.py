@@ -3,6 +3,8 @@ from requests.models import Response
 from config_data.config import API_URL
 from typing import Dict
 from bot.database.database import User
+from bot.database.models import update_user_tokens
+from api.authentication import refresh_token
 
 
 def add_habit_api(user: User, habit_data: Dict) -> bool:
@@ -28,5 +30,8 @@ def add_habit_api(user: User, habit_data: Dict) -> bool:
     response: Response = post(f"{API_URL}/api/habits", headers=headers, json=data)
     if response.status_code == 201:
         return True
+    elif response.status_code == 401:
+        tokens = refresh_token(token=user.to_json().get("api_token_refresh"))
+        update_user_tokens(user, tokens)
     else:
         return False

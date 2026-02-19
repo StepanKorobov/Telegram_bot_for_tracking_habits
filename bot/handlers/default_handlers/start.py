@@ -1,7 +1,7 @@
 from telebot.types import Message
 
 from bot.database.database import User
-from database.models import get_user_by_telegram_id, with_current_user
+from database.models import get_user_by_telegram_id
 from loader import bot
 from states.login import LoginState
 

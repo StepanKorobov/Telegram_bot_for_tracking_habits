@@ -52,6 +52,9 @@ def process_habit_terms(message: Message, current_user: User):
         data["terms"] = message.text
 
     result = add_habit_api(user=current_user, habit_data=data)
-    bot.send_message(message.from_user.id, "Новая привычка успешно добавлена!")
+    if result:
+        bot.send_message(message.from_user.id, "Новая привычка успешно добавлена!")
+    else:
+        bot.send_message(message.from_user.id, "Не удалось добавить привычку.")
 
     bot.delete_state(message.from_user.id, message.chat.id)
