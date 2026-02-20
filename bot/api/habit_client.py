@@ -45,7 +45,5 @@ def get_habit_api(user: User) -> str | None:
     response: Response = get(f"{API_URL}/api/habits", headers=headers)
     result = response.json()["habits"]
     if result:
-        habits_list = [i["habit_name"] for i in result]
-        habits = "\n".join(habits_list)
-        return habits
+        return result
     return None

@@ -17,6 +17,8 @@ from bot.database.database import User
 def get_habit(message: Message, current_user: User):
     habits = get_habit_api(user=current_user)
     if habits:
+        habits_list = [i["habit_name"] for i in habits]
+        habits = "\n".join(habits_list)
         bot.send_message(message.from_user.id, f"Ваши привычки:\n{habits}")
     else:
         bot.send_message(message.from_user.id, "У Вас пока ещё нет привычек")
