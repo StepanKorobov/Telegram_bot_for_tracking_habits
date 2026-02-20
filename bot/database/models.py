@@ -57,8 +57,9 @@ def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> N
         session.commit()
 
 
-def update_user_tokens(user: User, token_data: Dict[str, str]) -> None:
+def update_user_tokens(telegram_id: int, token_data: Dict[str, str]) -> None:
     with get_session() as session:
-        user.api_token = token_data["api_token"]
-        user.api_token_refresh = token_data["api_token_refresh"]
+        user: User = session.query(User).filter(User.telegram_id == telegram_id).one_or_none()
+        user.api_token = token_data.get("access_token")
+        user.api_token_refresh = token_data.get("refresh_token")
         session.commit()

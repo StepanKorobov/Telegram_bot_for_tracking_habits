@@ -30,7 +30,8 @@ async def lifespan(app: FastAPI):
 app: FastAPI = FastAPI(
     title="Habits app",
     description="Api для хранения данных о привычках пользователей",
-    version="0.3.1",
+    # version="0.3.1",
+    version="0.4.3",
     lifespan=lifespan,
     openapi_tags=tags_metadata
 )

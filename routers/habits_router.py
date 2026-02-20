@@ -30,7 +30,7 @@ async def get_all_habits(
 
     habits_list = await get_all_habit(session=session, user=current_user)
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"habits:": habits_list})
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"habits": habits_list})
 
 
 @router.post("/habits", response_model=HabitsCreateOut)

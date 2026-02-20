@@ -1,4 +1,4 @@
-from requests import post
+from requests import post, get
 from requests.models import Response
 from config_data.config import API_URL
 from typing import Dict
@@ -32,6 +32,20 @@ def add_habit_api(user: User, habit_data: Dict) -> bool:
         return True
     elif response.status_code == 401:
         tokens = refresh_token(token=user.to_json().get("api_token_refresh"))
-        update_user_tokens(user, tokens)
+        update_user_tokens(telegram_id=user.telegram_id, token_data=tokens)
     else:
         return False
+
+
+def get_habit_api(user: User) -> str | None:
+    token: str = user.to_json().get("api_token")
+    headers: Dict[str: str] = {
+        "Authorization": f"Bearer {token}",
+    }
+    response: Response = get(f"{API_URL}/api/habits", headers=headers)
+    result = response.json()["habits"]
+    if result:
+        habits_list = [i["habit_name"] for i in result]
+        habits = "\n".join(habits_list)
+        return habits
+    return None
