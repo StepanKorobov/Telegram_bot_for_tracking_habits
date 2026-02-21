@@ -59,5 +59,5 @@ def refresh_token(token: str):
     json_data: Dict[str: str] = {
         "refresh_token": token,
     }
-    response = post(f"{API_URL}/api/auth/refresh_token", json=json_data)
+    response: Response = post(f"{API_URL}/api/auth/refresh_token", json=json_data)
     return response.json()
