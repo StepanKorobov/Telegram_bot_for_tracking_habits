@@ -1,6 +1,7 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shemas.auth_shemas import User
@@ -29,8 +30,7 @@ async def get_all_habits(
     """
 
     habits_list = await get_all_habit(session=session, user=current_user)
-
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"habits": habits_list})
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"habits": jsonable_encoder(habits_list)})
 
 
 @router.post("/habits", response_model=HabitsCreateOut)

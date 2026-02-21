@@ -1,5 +1,5 @@
 from typing import List, Optional
-
+from datetime import date
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -13,9 +13,15 @@ class Habit(BaseModel):
     description: str = Field(
         ...,
         title="Habit description",
-        max_length=150,
+        max_length=250,
         min_length=1,
     )
+    goal: str = Field(
+        title="Habit goal",
+        max_length=50,
+        min_length=1,
+    )
+    terms_date: date
 
 
 class HabitsOut(Habit):

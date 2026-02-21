@@ -27,8 +27,9 @@ async def get_all_habit(user: Users, session: AsyncSession) -> List[Habits] | li
     result = await session.execute(query)
     habits: List[Habits] = result.scalars().all()
 
-    habits_list = [{"id": i_habits.id, "habit_name": i_habits.habit_name, "description": i_habits.description} for
-                   i_habits in habits]
+    # habits_list = [{"id": i_habits.id, "habit_name": i_habits.habit_name, "description": i_habits.description} for
+    #                i_habits in habits]
+    habits_list = [i_habits.to_json() for i_habits in habits]
 
     return habits_list
 
