@@ -1,9 +1,11 @@
-from requests import post, get
-from requests.models import Response
-from config_data.config import API_URL
 from typing import Dict
+
 from bot.database.database import User
 from bot.database.models import update_user_tokens
+from config_data.config import API_URL
+from requests import get, post
+from requests.models import Response
+
 from api.authentication import refresh_token
 
 
@@ -20,12 +22,14 @@ def add_habit_api(user: User, habit_data: Dict) -> bool:
     """
 
     token: str = user.to_json().get("api_token")
-    headers: Dict[str: str] = {
+    headers: Dict[str:str] = {
         "Authorization": f"Bearer {token}",
     }
-    data: Dict[str: str] = {
+    data: Dict[str:str] = {
         "habit_name": habit_data["name"],
         "description": habit_data["description"],
+        "goal": habit_data["goal"],
+        "terms_date": habit_data["terms"].strftime("%Y-%m-%d"),
     }
     response: Response = post(f"{API_URL}/api/habits", headers=headers, json=data)
     if response.status_code == 201:
@@ -39,11 +43,11 @@ def add_habit_api(user: User, habit_data: Dict) -> bool:
 
 def get_habit_api(user: User) -> str | None:
     token: str = user.to_json().get("api_token")
-    headers: Dict[str: str] = {
+    headers: Dict[str:str] = {
         "Authorization": f"Bearer {token}",
     }
     response: Response = get(f"{API_URL}/api/habits", headers=headers)
-    result = response.json()["habits"]
+    result: Dict = response.json()["habits"]
     if result:
         return result
     return None

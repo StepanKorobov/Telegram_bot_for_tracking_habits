@@ -1,9 +1,8 @@
 from typing import Dict
 
+from config_data.config import API_URL
 from requests import post
 from requests.models import Response
-
-from config_data.config import API_URL
 
 
 def registration_user(telegram_id: int, username: str, password: str) -> bool:
@@ -20,7 +19,7 @@ def registration_user(telegram_id: int, username: str, password: str) -> bool:
     :rtype: bool
     """
 
-    json_data: Dict[str: str | int] = {
+    json_data: Dict[str : str | int] = {
         "telegram_id": telegram_id,
         "username": username,
         "password": password,
@@ -44,7 +43,7 @@ def get_token(username: str, password: str) -> Dict[str, str] | None:
     :rtype: Dict[str, str] | None
     """
 
-    from_data: Dict[str: str | int] = {
+    from_data: Dict[str : str | int] = {
         "username": username,
         "password": password,
     }
@@ -56,7 +55,7 @@ def get_token(username: str, password: str) -> Dict[str, str] | None:
 
 
 def refresh_token(token: str):
-    json_data: Dict[str: str] = {
+    json_data: Dict[str:str] = {
         "refresh_token": token,
     }
     response: Response = post(f"{API_URL}/api/auth/refresh_token", json=json_data)
