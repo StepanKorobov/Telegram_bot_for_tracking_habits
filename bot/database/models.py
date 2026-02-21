@@ -1,7 +1,9 @@
 """Файл для взаимодействия с БД"""
-from typing import Union, Dict
+
+from typing import Dict
 
 from bot.database.database import Base, User, get_session
+from sqlalchemy import exists
 
 
 def create_tables():
@@ -11,22 +13,40 @@ def create_tables():
         Base.metadata.create_all(bind=session)
 
 
-def get_user_by_telegram_id(telegram_id: int) -> Union[User, None]:
+def get_user_by_telegram_id(telegram_id: int) -> User | None:
     """
     Функция поиска пользователя по telegram_id
 
     :param telegram_id: Телеграм ID пользователя
     :type telegram_id: int
     :return: User or None
-    :rtype: Union[User, None]
+    :rtype: User | None
     """
 
     with get_session() as session:
-        user: Union[User, None] = (
+        user: User | None = (
             session.query(User).filter(User.telegram_id == telegram_id).one_or_none()
         )
 
         return user
+
+
+def check_user_by_telegram_id(telegram_id: int) -> bool:
+    """
+    Функция проверки существования записи о пользователе в БД по telegram_id
+
+    :param telegram_id: Телеграм ID пользователя
+    :type telegram_id: int
+    :return: True or False
+    :rtype: bool
+    """
+
+    with get_session() as session:
+        user_exist: bool = session.query(
+            exists().where(User.telegram_id == telegram_id)
+        ).scalar()
+
+        return user_exist
 
 
 def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> None:
@@ -41,7 +61,7 @@ def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> N
     :type api_token: str
     :param api_token_refresh: API ключ для обновления основного
     :type api_token_refresh: str
-    :return: None
+    :return: Ничего
     :rtype: None
     """
 
@@ -59,7 +79,9 @@ def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> N
 
 def update_user_tokens(telegram_id: int, token_data: Dict[str, str]) -> None:
     with get_session() as session:
-        user: User = session.query(User).filter(User.telegram_id == telegram_id).one_or_none()
+        user: User = (
+            session.query(User).filter(User.telegram_id == telegram_id).one_or_none()
+        )
         user.api_token = token_data.get("access_token")
         user.api_token_refresh = token_data.get("refresh_token")
         session.commit()
