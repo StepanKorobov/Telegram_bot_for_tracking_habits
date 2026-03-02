@@ -14,4 +14,33 @@ services:
     volumes:
       - ./db/:/var/lib/postgresql
     hostname: "database"
-
+    networks:
+      - habit_network
+#
+#  app:
+#    container_name: fastapi
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    stop_signal: SIGTERM
+#    restart: always
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - postgresql
+#    networks:
+#      - habit_network
+#
+#  bot:
+#    container_name: telebot
+#    build:
+#      context: .
+#      dockerfile: Dockerfilebot
+#    stop_signal: SIGTERM
+#    restart: always
+#    env_file:
+#      - .env
+#
+#networks:
+#  habit_network:
+#    driver: bridge
