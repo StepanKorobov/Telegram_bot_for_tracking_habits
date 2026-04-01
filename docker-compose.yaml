@@ -14,8 +14,8 @@ services:
     volumes:
       - ./db/:/var/lib/postgresql
     hostname: "database"
-    networks:
-      - habit_network
+#    networks:
+#      - habit_network
 #
 #  app:
 #    container_name: fastapi
