@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from shemas.auth_shemas import User
 from routers.auth_router import get_current_active_user
 
-from models.habits_models import get_all_habit, write_habits, get_habit_by_id, update_habit, delete_habit
+from models.habits_models import get_all_habit, write_habits, get_habit_by_id, update_habit, delete_habit, \
+    delete_habit_all
 from shemas.habits_shemas import Habit, HabitsListOut, HabitsCreateOut, HabitsOut, HabitUpdate
 from database.database import get_session, Habits
 
@@ -140,7 +141,7 @@ async def delete_habits(habit_id: int,
                         current_user: Annotated[User, Depends(get_current_active_user)],
                         session: AsyncSession = Depends(get_session)) -> JSONResponse:
     """
-    Эндпоинт для даления привычки
+    Эндпоинт для удаления привычки по id
 
     :param habit_id: ID привычки
     :type habit_id: int
@@ -153,5 +154,18 @@ async def delete_habits(habit_id: int,
     """
 
     await delete_habit(habit_id=habit_id, user_id=current_user.id, session=session)
+
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True})
+
+
+@router.delete("/habits")
+async def delete_habits_all(current_user: Annotated[User, Depends(get_current_active_user)],
+                            session: AsyncSession = Depends(get_session)) -> JSONResponse:
+    """
+    Эндпоинт для удаления всех привычек пользователя
+
+    """
+
+    await  delete_habit_all(user_id=current_user.id, session=session)
 
     return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True})

@@ -133,3 +133,23 @@ async def delete_habit(habit_id: int, user_id: int, session: AsyncSession) -> No
 
     await session.delete(habit)
     await session.commit()
+
+
+async def delete_habit_all(user_id: int, session: AsyncSession) -> None:
+    """
+    Корутина для удаления всех привычек пользователя
+
+    :param user_id: ID пользователя
+    :type user_id: int
+    :param session: Асинхронная сессия
+    :type session: AsyncSession
+    :return: Ничего
+    :rtype: None
+    """
+
+    query = delete(Habits).where(Habits.user_id == user_id)
+    result = await session.execute(query)
+    await session.commit()
+
+    if result.rowcount == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

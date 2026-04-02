@@ -3,7 +3,7 @@ from typing import Dict
 from bot.database.database import User
 from bot.database.models import update_user_tokens
 from config_data.config import API_URL
-from requests import get, post
+from requests import get, post, delete
 from requests.models import Response
 
 from api.authentication import refresh_token
@@ -41,7 +41,7 @@ def add_habit_api(user: User, habit_data: Dict) -> bool:
         return False
 
 
-def get_habit_api(user: User) -> str | None:
+def get_habit_api(user: User) -> Dict | None:
     token: str = user.to_json().get("api_token")
     headers: Dict[str:str] = {
         "Authorization": f"Bearer {token}",
@@ -50,4 +50,15 @@ def get_habit_api(user: User) -> str | None:
     result: Dict = response.json()["habits"]
     if result:
         return result
+    return None
+
+
+def remove_habit_api_all(user: User) -> bool | None:
+    token: str = user.to_json().get("api_token")
+    headers: Dict[str:str] = {
+        "Authorization": f"Bearer {token}",
+    }
+    response: Response = delete(f"{API_URL}/api/habits", headers=headers)
+    if response.status_code == 200:
+        return True
     return None

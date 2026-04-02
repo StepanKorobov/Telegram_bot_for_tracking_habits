@@ -2,7 +2,7 @@ from typing import Dict
 
 from telebot.types import Message, CallbackQuery
 from api.authentication import get_token, registration_user
-from api.habit_client import add_habit_api, get_habit_api
+from api.habit_client import add_habit_api, get_habit_api, remove_habit_api_all
 from database.models import add_user, get_user_by_telegram_id
 from loader import bot
 from states.edit_habit import EditState
@@ -195,10 +195,14 @@ def delete_all_habits(call: CallbackQuery, current_user: User) -> None:
     :rtype: None
     """
 
+    result: bool | None = remove_habit_api_all(user=current_user)
+    text: str = "Все привычки успешно удалены!"
+    if not result:
+        text: str = "Не удалось удалить все привычки"
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
-        text="Все привычки успешно удалены!",
+        text=text,
         reply_markup=None
     )
     bot.delete_state(call.from_user.id, call.message.chat.id)
