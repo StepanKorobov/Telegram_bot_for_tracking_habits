@@ -90,7 +90,17 @@ def process_edit_terms(message: Message):
 @bot.callback_query_handler(state=EditState.edit, func=lambda call: call.data.startswith("habit_id_"))
 @get_current_user_from_inline_button
 def edit_hobit(call: CallbackQuery, current_user: User):
-    """Выбор действия редактировать или удалить"""
+    """
+    Выбор действия редактировать или удалить
+
+    :param call:
+    :type call: CallbackQuery
+    :param current_user:
+    :type current_user: User
+    :return: None
+    :rtype: None
+    """
+
     habit_id = int(call.data.split("_")[2])
     habit_name = call.data.split("_")[3]
     bot.edit_message_text(
@@ -104,7 +114,17 @@ def edit_hobit(call: CallbackQuery, current_user: User):
 @bot.callback_query_handler(state=EditState.edit, func=lambda call: call.data.startswith("habit_edit_id_"))
 @get_current_user_from_inline_button
 def edit_hobit_id_choice_action(call: CallbackQuery, current_user: User):
-    """Выбор того, что именно редактировать в привычке или всё"""
+    """
+    Выбор того, что именно редактировать в привычке или всё
+
+    :param call:
+    :type call: CallbackQuery
+    :param current_user:
+    :type current_user: User
+    :return: None
+    :rtype: None
+    """
+
     habit_id = int(call.data.split("_")[3])
     bot.edit_message_text(
         chat_id=call.message.chat.id,
@@ -117,7 +137,17 @@ def edit_hobit_id_choice_action(call: CallbackQuery, current_user: User):
 @bot.callback_query_handler(state=EditState.edit, func=lambda call: call.data.startswith("habit_choice_id_"))
 @get_current_user_from_inline_button
 def edit_hobit_id_choice_action_all(call: CallbackQuery, current_user: User):
-    """Обработка выбранного действия"""
+    """
+    Обработка выбранного действия
+
+    :param call:
+    :type call: CallbackQuery
+    :param current_user:
+    :type current_user: User
+    :return: None
+    :rtype: None
+    """
+
     habit_action = call.data.split("_")[3]
     habit_id = int(call.data.split("_")[4])
     bot.edit_message_text(
@@ -130,8 +160,18 @@ def edit_hobit_id_choice_action_all(call: CallbackQuery, current_user: User):
 
 @bot.callback_query_handler(state=EditState.edit, func=lambda call: call.data.startswith("habit_remove_id_"))
 @get_current_user_from_inline_button
-def delete_habits_id(call: CallbackQuery, current_user: User):
-    """Удаление привычки пользователя по id"""
+def delete_habits_id(call: CallbackQuery, current_user: User) -> None:
+    """
+    Удаление привычки пользователя по id
+
+    :param call:
+    :type call: CallbackQuery
+    :param current_user:
+    :type current_user: User
+    :return: None
+    :rtype: None
+    """
+
     habit_id = int(call.data.split("_")[3])
     bot.edit_message_text(
         chat_id=call.message.chat.id,
@@ -143,8 +183,18 @@ def delete_habits_id(call: CallbackQuery, current_user: User):
 
 @bot.callback_query_handler(state=EditState.edit, func=lambda call: call.data == "delete_all_habit")
 @get_current_user_from_inline_button
-def delete_all_habits(call: CallbackQuery, current_user: User):
-    """Удаление всех привычек пользователя"""
+def delete_all_habits(call: CallbackQuery, current_user: User) -> None:
+    """
+    Удаление всех привычек пользователя
+
+    :param call:
+    :type call: CallbackQuery
+    :param current_user:
+    :type current_user: User
+    :return: None
+    :rtype: None
+    """
+
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
@@ -155,8 +205,16 @@ def delete_all_habits(call: CallbackQuery, current_user: User):
 
 
 @bot.callback_query_handler(state=EditState.edit, func=lambda call: call.data == "clear_menu")
-def clear_menu(call: CallbackQuery):
-    """Убрать меню"""
+def clear_menu(call: CallbackQuery) -> None:
+    """
+    Очистка меню - полностью убирает inline клавиатуру
+
+    :param call:
+    :type call: CallbackQuery
+    :return: None
+    :rtype: None
+    """
+
     bot.edit_message_reply_markup(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
