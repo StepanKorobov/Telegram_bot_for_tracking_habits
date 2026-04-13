@@ -3,7 +3,7 @@ from typing import Dict
 from bot.database.database import User
 from bot.database.models import update_user_tokens
 from config_data.config import API_URL
-from requests import get, post, delete
+from requests import get, post, delete, patch, put
 from requests.models import Response
 
 from api.authentication import refresh_token
@@ -53,12 +53,54 @@ def get_habit_api(user: User) -> Dict | None:
     return None
 
 
+def remove_habit_api(user: User, habit_id: int) -> bool | None:
+    token: str = user.to_json().get("api_token")
+    headers: Dict[str:str] = {
+        "Authorization": f"Bearer {token}",
+    }
+    response: Response = delete(f"{API_URL}/api/habits/{habit_id}", headers=headers)
+    if response.status_code == 200:
+        return True
+    return None
+
+
 def remove_habit_api_all(user: User) -> bool | None:
     token: str = user.to_json().get("api_token")
     headers: Dict[str:str] = {
         "Authorization": f"Bearer {token}",
     }
     response: Response = delete(f"{API_URL}/api/habits", headers=headers)
+    if response.status_code == 200:
+        return True
+    return None
+
+
+def edit_habit_api_all(user: User, habit_id: int, habit_data: Dict) -> bool | None:
+    token = user.to_json().get("api_token")
+    headers: Dict[str:str] = {
+        "Authorization": f"Bearer {token}",
+    }
+    data = {
+        "habit_name": habit_data["name"],
+        "description": habit_data["description"],
+        "goal": habit_data["goal"],
+        "terms_date": habit_data["terms"],
+    }
+    response = put(f"{API_URL}/api/habits/{habit_id}", headers=headers, json=data)
+    if response.status_code == 200:
+        return True
+    return None
+
+
+def edit_habit_api(user: User, habit_id: int, param: str, value: str | int) -> bool | None:
+    token: str = user.to_json().get("api_token")
+    headers: Dict[str:str] = {
+        "Authorization": f"Bearer {token}",
+    }
+    data = {
+        param: value,
+    }
+    response: Response = patch(f"{API_URL}/api/habits/{habit_id}", headers=headers, json=data)
     if response.status_code == 200:
         return True
     return None

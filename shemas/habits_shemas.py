@@ -40,6 +40,8 @@ class HabitsCreateOut(BaseModel):
 class HabitUpdate(BaseModel):
     habit_name: Optional[str] = None
     description: Optional[str] = None
+    goal: Optional[str] = None
+    terms_date: Optional[date] = None
 
     @model_validator(mode="before")
     def check_value(cls, values):

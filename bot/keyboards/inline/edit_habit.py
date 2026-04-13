@@ -33,6 +33,6 @@ def edit_hobit_id_choice_keyboard(habit_id: int) -> InlineKeyboardMarkup:
     kb.row(InlineKeyboardButton(text="Название", callback_data=f"habit_choice_id_name_{habit_id}"))
     kb.row(InlineKeyboardButton(text="Описание", callback_data=f"habit_choice_id_description_{habit_id}"))
     kb.row(InlineKeyboardButton(text="Цель", callback_data=f"habit_choice_id_goal_{habit_id}"))
-    kb.row(InlineKeyboardButton(text="Срок", callback_data=f"habit_choice_id_terms_date_{habit_id}"))
+    kb.row(InlineKeyboardButton(text="Срок", callback_data=f"habit_choice_id_terms_{habit_id}"))
     kb.row(InlineKeyboardButton(text="Всё", callback_data=f"habit_choice_id_all_{habit_id}"))
     return kb

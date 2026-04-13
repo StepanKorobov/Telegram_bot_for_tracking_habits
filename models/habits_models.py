@@ -99,6 +99,10 @@ async def update_habit(habit_id: int, habit: Habit, user_id: int, session: Async
         habits["habit_name"] = habit.habit_name
     if habit.description:
         habits["description"] = habit.description
+    if habit.goal:
+        habits["goal"] = habit.goal
+    if habit.terms_date:
+        habits["terms_date"] = habit.terms_date
 
     query = update(Habits).filter(Habits.id == habit_id, Habits.user_id == user_id).values(**habits)
 
