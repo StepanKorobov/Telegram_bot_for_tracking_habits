@@ -31,7 +31,7 @@ def edit_habit(message: Message, current_user: User) -> None:
 
     if habits:
         bot.set_state(message.from_user.id, EditState.edit, message.chat.id)
-        habits_list: List[str: str | None] = [{"id": i["id"], "name": i["habit_name"]} for i in habits]
+        habits_list: List[Dict[str: str] | None] = [{"id": i["id"], "name": i["habit_name"]} for i in habits]
         bot.send_message(message.chat.id, f"Выберете привычку для редактирования:",
                          reply_markup=edit_habits_keyboard(habits_list=habits_list))
     else:

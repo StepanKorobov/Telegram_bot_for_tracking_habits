@@ -97,8 +97,8 @@ class HabitTracking(Base):
 
     # Определяем поля таблицы
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    alert_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    count: Mapped[int] = mapped_column(Integer, nullable=False)
+    alert_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_completion_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     habits_id: Mapped[int] = mapped_column(ForeignKey("habits.id"), nullable=False)
 

@@ -10,6 +10,7 @@ from sqlalchemy.sql.functions import user
 from database.database import Users, Habits, get_session
 from shemas.auth_shemas import User
 from shemas.habits_shemas import Habit
+from models.habit_tracking_models import write_track_habits
 
 
 async def get_all_habit(user: Users, session: AsyncSession) -> List[Habits] | list:
@@ -52,6 +53,8 @@ async def write_habits(user: Users, habits: Habits, session: AsyncSession) -> in
     session.add(habits)
 
     await session.commit()
+
+    await write_track_habits(session=session, habit_id=habits.id)
 
     return habits.id
 
