@@ -48,6 +48,7 @@ async def habits_track_check(session: AsyncSession, habit_id: int) -> bool:
 
     if habit_tracking.last_completion_date is None:
         habit_tracking.last_completion_date = current_date_time
+        habit_tracking.count += 1
         await session.commit()
         return True
 
@@ -56,6 +57,7 @@ async def habits_track_check(session: AsyncSession, habit_id: int) -> bool:
 
     if current_date > habit_tracking_date:
         habit_tracking.last_completion_date = current_date_time
+        habit_tracking.count += 1
         await session.commit()
         return True
 
