@@ -73,7 +73,7 @@ class Habits(Base):
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     goal: Mapped[str] = mapped_column(String(50), nullable=False)
     terms_date: Mapped[date] = mapped_column(Date, nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Определяем связь Many-to-One с таблицей Users
     user: Mapped[List["Users"]] = Relationship(back_populates="habits")
@@ -100,7 +100,7 @@ class HabitTracking(Base):
     alert_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_completion_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    habits_id: Mapped[int] = mapped_column(ForeignKey("habits.id"), nullable=False)
+    habits_id: Mapped[int] = mapped_column(ForeignKey("habits.id", ondelete="CASCADE"), nullable=False)
 
     # Определяем связь Many-to-One с таблицей Habits
     habits: Mapped[List["Habits"]] = Relationship(back_populates="habit_tracking")

@@ -4,6 +4,7 @@ from telebot.types import Message, CallbackQuery
 
 from api.authentication import get_token, registration_user
 from api.habit_client import add_habit_api, get_habit_api
+from api.track_habit_client import track_habit_check_api
 from database.models import add_user, get_user_by_telegram_id
 from loader import bot
 from states.track_habit import TrackState
@@ -57,13 +58,18 @@ def track_habit_confirmation(call: CallbackQuery):
 
 @bot.callback_query_handler(state=TrackState.track,
                             func=lambda call: call.data.startswith("track_habit_accepted_id_"))
-def track_habit_confirmation(call: CallbackQuery):
+@get_current_user_from_inline_button
+def track_habit_confirmation(call: CallbackQuery, current_user: User):
     habit_id: int = int(call.data.split("_")[4])
+
+    result: bool = track_habit_check_api(user=current_user, habit_id=habit_id)
+
+    text: str = "Привычка успешно выполнена" if result else "Привычка уже была выполнена сегодня"
 
     bot.edit_message_text(
         chat_id=call.message.chat.id,
         message_id=call.message.message_id,
-        text=f"Привычка успешно выполнена",
+        text=text,
         reply_markup=None
     )
     bot.delete_state(call.from_user.id, call.message.chat.id)
