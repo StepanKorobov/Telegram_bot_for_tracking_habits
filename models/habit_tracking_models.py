@@ -8,12 +8,12 @@ from sqlalchemy import update, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.functions import user
 
-from database.database import Users, Habits, HabitTracking, get_session
+from database.database import Users, Habits, HabitTracking, get_session, HabitTrackingStatistics
 from shemas.auth_shemas import User
 from shemas.habits_shemas import Habit
 
 
-async def write_track_habits(session: AsyncSession, habit_id: int):
+async def write_track_habits(session: AsyncSession, habit_id: int) -> None:
     """
     Добавить запись в отслеживание привычки
     """
@@ -25,7 +25,17 @@ async def write_track_habits(session: AsyncSession, habit_id: int):
     await session.commit()
 
 
-async def habits_track_check(session: AsyncSession, habit_id: int) -> bool:
+async def write_track_habits_statistic(session: AsyncSession, user_id: int, habit_id: int, date_time) -> None:
+    habit_statistic = HabitTrackingStatistics(
+        completion_date=date_time,
+        user_id=user_id,
+        habit_id=habit_id,
+    )
+    session.add(habit_statistic)
+    await session.commit()
+
+
+async def habits_track_check(session: AsyncSession, user_id: int, habit_id: int) -> bool:
     """
     Корутина для удаления привычки
 
@@ -50,6 +60,7 @@ async def habits_track_check(session: AsyncSession, habit_id: int) -> bool:
         habit_tracking.last_completion_date = current_date_time
         habit_tracking.count += 1
         await session.commit()
+        await write_track_habits_statistic(session=session, user_id=user_id, habit_id=habit_id, date_time=current_date_time)
         return True
 
     current_date = datetime.datetime.date(current_date_time)
@@ -59,6 +70,7 @@ async def habits_track_check(session: AsyncSession, habit_id: int) -> bool:
         habit_tracking.last_completion_date = current_date_time
         habit_tracking.count += 1
         await session.commit()
+        await write_track_habits_statistic(session=session, user_id=user_id, habit_id=habit_id, date_time=current_date_time)
         return True
 
     return False

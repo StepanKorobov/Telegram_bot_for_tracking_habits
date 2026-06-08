@@ -53,6 +53,10 @@ class Users(Base):
     habits: Mapped[Optional["Habits"]] = relationship(
         back_populates="user", cascade="all"
     )
+    # Определяем связь One-to-Many с таблицей HabitTrackingStatistics
+    habit_tracking_statistics: Mapped[Optional["HabitTrackingStatistics"]] = relationship(
+        back_populates="user", cascade="all"
+    )
 
     def __repr__(self):
         return f"username: {self.username}, telegram_id: {self.telegram_id}, is_active: {self.is_active}"
@@ -77,8 +81,12 @@ class Habits(Base):
 
     # Определяем связь Many-to-One с таблицей Users
     user: Mapped[List["Users"]] = Relationship(back_populates="habits")
-    # # Определяем связь One-to-Many с таблицей HabitTracking
+    # Определяем связь One-to-Many с таблицей HabitTracking
     habit_tracking: Mapped[Optional["HabitTracking"]] = relationship(
+        back_populates="habits", cascade="all"
+    )
+    #
+    habit_tracking_statistics: Mapped[List["HabitTrackingStatistics"]] = relationship(
         back_populates="habits", cascade="all"
     )
 
@@ -107,6 +115,30 @@ class HabitTracking(Base):
 
     def __repr__(self):
         return f"alert_time: {self.alert_time}, count: {self.count}, last_completion_date: {self.last_completion_date},habits_id: {self.habits_id}"
+
+    def to_json(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+
+class HabitTrackingStatistics(Base):
+    """Таблица сбора статистики о датах выполнения привычек"""
+
+    # Название таблицы
+    __tablename__ = "habit_tracking_statistics"
+
+    # Определяем поля таблицы
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    completion_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    habit_id: Mapped[int] = mapped_column(ForeignKey("habits.id", ondelete="CASCADE"), nullable=False)
+
+    # Определяем связь Many_to_One с таблицей Users
+    user: Mapped[List["Users"]] = Relationship(back_populates="habit_tracking_statistics")
+    # Определяем связь Many_to_One с таблицей Habits
+    habits: Mapped[List["Habits"]] = relationship(back_populates="habit_tracking_statistics")
+
+    def __repr__(self):
+        return f"completion_date: {self.completion_date}, user_id: {self.user_id}, habit_id: {self.habit_id}"
 
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}

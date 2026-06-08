@@ -40,7 +40,7 @@ async def habits_tracing_check(
     :rtype: JSONResponse
     """
 
-    result: bool = await habits_track_check(session=session, habit_id=habit_id.habit_id)
+    result: bool = await habits_track_check(session=session, user_id=current_user.id, habit_id=habit_id.habit_id)
 
     if result:
         return JSONResponse(status_code=200, content={"result": "ok"})
