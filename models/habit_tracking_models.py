@@ -7,6 +7,7 @@ from sqlalchemy.future import select
 from sqlalchemy import update, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.functions import user
+from sqlalchemy.orm import selectinload
 
 from database.database import Users, Habits, HabitTracking, get_session, HabitTrackingStatistics
 from shemas.auth_shemas import User
@@ -37,7 +38,7 @@ async def write_track_habits_statistic(session: AsyncSession, user_id: int, habi
 
 async def habits_track_check(session: AsyncSession, user_id: int, habit_id: int) -> bool:
     """
-    Корутина для удаления привычки
+    Корутина для отметки выполнения привычки
 
     :param habit_id: ID привычки
     :type habit_id: int
@@ -60,7 +61,8 @@ async def habits_track_check(session: AsyncSession, user_id: int, habit_id: int)
         habit_tracking.last_completion_date = current_date_time
         habit_tracking.count += 1
         await session.commit()
-        await write_track_habits_statistic(session=session, user_id=user_id, habit_id=habit_id, date_time=current_date_time)
+        await write_track_habits_statistic(session=session, user_id=user_id, habit_id=habit_id,
+                                           date_time=current_date_time)
         return True
 
     current_date = datetime.datetime.date(current_date_time)
@@ -70,7 +72,25 @@ async def habits_track_check(session: AsyncSession, user_id: int, habit_id: int)
         habit_tracking.last_completion_date = current_date_time
         habit_tracking.count += 1
         await session.commit()
-        await write_track_habits_statistic(session=session, user_id=user_id, habit_id=habit_id, date_time=current_date_time)
+        await write_track_habits_statistic(session=session, user_id=user_id, habit_id=habit_id,
+                                           date_time=current_date_time)
         return True
 
     return False
+
+
+async def get_habit_track_statistic_all(session: AsyncSession, user_id: int):
+    query = (
+        select(Habits)
+        .join(Habits.user)
+        .where(Users.id == user_id)
+        .options(selectinload(Habits.habit_tracking_statistics))
+    )
+    result = await session.execute(query)
+    habits = result.scalars().all()
+
+    return habits
+
+
+async def get_habit_track_statistic_from_habit_id(session: AsyncSession, user_id: int, habit_id: int) -> None:
+    pass

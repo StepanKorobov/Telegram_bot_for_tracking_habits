@@ -59,7 +59,7 @@ async def add_habits(current_user: Annotated[User, Depends(get_current_active_us
 @router.get("/habits/{habit_id}", response_model=HabitsOut)
 async def get_habits_by_id(habit_id: int,
                            current_user: Annotated[User, Depends(get_current_active_user)],
-                           session: AsyncSession = Depends(get_session)):
+                           session: AsyncSession = Depends(get_session)) -> JSONResponse:
     """
     Эндпоинт для получения привычки по ID
 
