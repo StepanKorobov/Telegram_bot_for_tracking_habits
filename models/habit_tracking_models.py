@@ -92,5 +92,14 @@ async def get_habit_track_statistic_all(session: AsyncSession, user_id: int):
     return habits
 
 
-async def get_habit_track_statistic_from_habit_id(session: AsyncSession, user_id: int, habit_id: int) -> None:
-    pass
+async def get_habit_track_statistic_from_habit_id(session: AsyncSession, user_id: int, habit_id: int):
+    query = (
+        select(Habits)
+        .join(Habits.user)
+        .where(Users.id == user_id, Habits.id == habit_id)
+        .options(selectinload(Habits.habit_tracking_statistics))
+    )
+    result = await session.execute(query)
+    habits = result.scalars().one_or_none()
+
+    return habits

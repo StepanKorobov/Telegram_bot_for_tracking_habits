@@ -81,9 +81,27 @@ async def habits_tracking_statistic_all(
         session: AsyncSession = Depends(get_session)):
     result = await get_habit_track_statistic_all(session=session, user_id=current_user.id)
 
+    response = []
+    for i_habit in result:
+        res = {
+            "id": i_habit.id,
+            "habit_name": i_habit.habit_name,
+            "description": i_habit.description,
+            "goal": i_habit.goal,
+            "terms_date": i_habit.terms_date,
+            "habits_check_date": [{"id": i_statistic.id, "habits_check_date": i_statistic.completion_date} for
+                                  i_statistic in i_habit.habit_tracking_statistics
+                                  ]}
+        response.append(res)
+
+    return JSONResponse(status_code=200, content={"result": jsonable_encoder(response)})
+
+
+@router.get("/habits_tracking/statistic/{habit_id}", response_model=HabitsTrackOut)
+async def habits_tracking_statistic(
+        habit_id: int,
+        current_user: Annotated[User, Depends(get_current_active_user)],
+        session: AsyncSession = Depends(get_session)):
+    result = await get_habit_track_statistic_from_habit_id(session=session, user_id=current_user.id,habit_id=habit_id)
+
     return JSONResponse(status_code=200, content={"result": jsonable_encoder(result)})
-
-
-@router.get("/habits_tracking/statistic/{habit_id}")
-async def habits_tracking_statistic(habit_id: int):
-    pass
