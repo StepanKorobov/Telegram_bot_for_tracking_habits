@@ -7,6 +7,15 @@ from bot.database.models import update_user_tokens, get_user_by_telegram_id
 from bot.database.database import User
 
 
+class ExpiredTokenError(Exception):
+    """Возникает, когда токен доступа истек и требует обновления."""
+
+    def __init__(self, user: "User", original_token: str | None = None):
+        self.user = user
+        self.original_token = original_token
+        super().__init__(f"Token expired for user {user.telegram_id}")
+
+
 def registration_user(telegram_id: int, username: str, password: str) -> bool:
     """
     Функция регистрации пользователя в API
@@ -91,9 +100,9 @@ def refresh_token_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
 
     @wraps(func)
     def wrapped_func(*args, **kwargs):
-        result = func(*args, **kwargs)
-
-        if result == 401:
+        try:
+            result = func(*args, **kwargs)
+        except ExpiredTokenError as exc:
             user: User = kwargs.get("user")
             api_token_refresh: str = user.to_json().get("api_token_refresh")
             tokens: dict[str, str] = refresh_token(token=api_token_refresh)
@@ -103,10 +112,6 @@ def refresh_token_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             new_user: User = get_user_by_telegram_id(telegram_id=user.telegram_id)
             kwargs["user"] = new_user
             result = func(*args, **kwargs)
-            if result == 401:
-                # Тут реализовать логику повторной авторизации
-                pass
-
         return result
 
     return wrapped_func
