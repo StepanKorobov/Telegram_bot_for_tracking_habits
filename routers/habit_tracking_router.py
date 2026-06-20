@@ -89,7 +89,7 @@ async def habits_tracking_statistic_all(
             "description": i_habit.description,
             "goal": i_habit.goal,
             "terms_date": i_habit.terms_date,
-            "habits_check_date": [{"id": i_statistic.id, "habits_check_date": i_statistic.completion_date} for
+            "habit_tracking_statistics": [{"id": i_statistic.id, "habits_check_date": i_statistic.completion_date} for
                                   i_statistic in i_habit.habit_tracking_statistics
                                   ]}
         response.append(res)
@@ -104,4 +104,13 @@ async def habits_tracking_statistic(
         session: AsyncSession = Depends(get_session)):
     result = await get_habit_track_statistic_from_habit_id(session=session, user_id=current_user.id,habit_id=habit_id)
 
-    return JSONResponse(status_code=200, content={"result": jsonable_encoder(result)})
+    response = {
+        "id": result.id,
+        "habit_name": result.habit_name,
+        "description": result.description,
+        "goal": result.goal,
+        "terms_date": result.terms_date,
+        "habit_tracking_statistics": [{"id": i_statistic.id, "habits_check_date": i_statistic.completion_date} for
+                              i_statistic in result.habit_tracking_statistics
+                              ]}
+    return JSONResponse(status_code=200, content={"result": jsonable_encoder(response)})

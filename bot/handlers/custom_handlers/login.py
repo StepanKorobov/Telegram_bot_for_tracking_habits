@@ -37,7 +37,7 @@ def login(message: Message):
 
 
 @bot.message_handler(state=LoginState.registration)
-def registration(message: Message):
+def registration(message: Message) -> None:
     bot.delete_message(message.chat.id, message.message_id)
     password: str = message.text
     check_password = password_validator(password=password)
