@@ -1,8 +1,10 @@
-from typing import Dict
-
+from typing import Callable, Any
+from functools import wraps
 from config_data.config import API_URL
 from requests import post
 from requests.models import Response
+from bot.database.models import update_user_tokens, get_user_by_telegram_id
+from bot.database.database import User
 
 
 def registration_user(telegram_id: int, username: str, password: str) -> bool:
@@ -19,7 +21,7 @@ def registration_user(telegram_id: int, username: str, password: str) -> bool:
     :rtype: bool
     """
 
-    json_data: Dict[str : str | int] = {
+    json_data: dict[str, str | int] = {
         "telegram_id": telegram_id,
         "username": username,
         "password": password,
@@ -31,7 +33,7 @@ def registration_user(telegram_id: int, username: str, password: str) -> bool:
         return False
 
 
-def get_token(username: str, password: str) -> Dict[str, str] | None:
+def get_token(username: str, password: str) -> dict[str, str] | None:
     """
     Функция для получения токена из API по логину и паролю
 
@@ -40,10 +42,10 @@ def get_token(username: str, password: str) -> Dict[str, str] | None:
     :param password: Пароль пользователя
     :type password: str
     :return: Словарь с токенами | Ничего
-    :rtype: Dict[str, str] | None
+    :rtype: dict[str, str] | None
     """
 
-    from_data: Dict[str : str | int] = {
+    from_data: dict[str, str | int] = {
         "username": username,
         "password": password,
     }
@@ -55,8 +57,56 @@ def get_token(username: str, password: str) -> Dict[str, str] | None:
 
 
 def refresh_token(token: str):
-    json_data: Dict[str:str] = {
+    json_data: dict[str, str] = {
         "refresh_token": token,
     }
     response: Response = post(f"{API_URL}/api/auth/refresh_token", json=json_data)
     return response.json()
+
+
+def refresh_token_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Повторяет вызов функции при ошибке 401 с предварительным обновлением токена.
+
+    Если результат функции равен `401`, декоратор:
+      - извлекает пользователя из `kwargs["user"]`;
+      - обновляет его токены через `refresh_token` и `update_user_tokens`;
+      - заменяет пользователя в `kwargs` на актуальную версию из БД;
+      - вызывает функцию повторно.
+
+    Требования:
+      - `func` должна возвращать `401` при ошибке авторизации.
+      - в `kwargs` должен быть ключ `"user"` с объектом `User`, имеющим `.to_json()`.
+
+    Поведение:
+      - выполняется только одна повторная попытка;
+      - ошибки на этапе обновления токена подавляются (возвращается исходный 401);
+      - `kwargs` изменяются «на месте».
+
+    Args:
+        func: Функция для декорирования.
+
+    Returns:
+        Функция-обертка с той же сигнатурой.
+    """
+
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        result = func(*args, **kwargs)
+
+        if result == 401:
+            user: User = kwargs.get("user")
+            api_token_refresh: str = user.to_json().get("api_token_refresh")
+            tokens: dict[str, str] = refresh_token(token=api_token_refresh)
+
+            update_user_tokens(telegram_id=user.telegram_id, token_data=tokens)
+
+            new_user: User = get_user_by_telegram_id(telegram_id=user.telegram_id)
+            kwargs["user"] = new_user
+            result = func(*args, **kwargs)
+            if result == 401:
+                # Тут реализовать логику повторной авторизации
+                pass
+
+        return result
+
+    return wrapped_func
