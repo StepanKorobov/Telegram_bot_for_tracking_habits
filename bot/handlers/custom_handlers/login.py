@@ -4,6 +4,7 @@ from telebot.types import Message
 
 from api.authentication import get_token, registration_user
 from database.models import add_user, get_user_by_telegram_id
+from bot.database.models import update_user_tokens
 from loader import bot
 from states.login import LoginState
 from utils.password_validation import password_validator
@@ -16,6 +17,24 @@ def login(message: Message):
     bot.send_message(
         message.from_user.id, f"Привет {message.from_user.username}, Введи пароль:"
     )
+
+
+@bot.message_handler(state=LoginState.login)
+def login(message: Message):
+    bot.delete_message(message.chat.id, message.message_id)
+    password = message.text
+    user = get_user_by_telegram_id(message.chat.id)
+    tokens = get_token(username=message.from_user.username, password=password)
+    if tokens:
+        update_user_tokens(telegram_id=user.telegram_id, token_data=tokens)
+        bot.send_message(
+            message.from_user.id, f"Привет {message.from_user.username}, вы успешно вошли в бота"
+        )
+        bot.delete_state(message.from_user.id, message.chat.id)
+    else:
+        bot.send_message(
+            message.from_user.id, f"Ошибка: Не верный пароль. Введите пароль:"
+        )
 
 
 # @bot.message_handler(state=LoginState.password)
