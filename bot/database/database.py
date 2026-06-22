@@ -1,5 +1,3 @@
-"""Файл настройки сессии и создания БД"""
-
 from contextlib import contextmanager
 
 from sqlalchemy import Integer, String, create_engine

@@ -1,10 +1,11 @@
-from bot.database.database import User
-from bot.database.models import update_user_tokens
-from config_data.config import API_URL
-from requests import get, post, delete, patch, put
-from requests.models import Response
 from datetime import datetime
-from api.authentication import refresh_token, refresh_token_decorator, ExpiredTokenError
+
+from bot.database.database import User
+from config_data.config import API_URL
+from requests import delete, get, patch, post, put
+from requests.models import Response
+
+from api.authentication import ExpiredTokenError, refresh_token, refresh_token_decorator
 
 
 @refresh_token_decorator
@@ -43,6 +44,15 @@ def add_habit_api(user: User, habit_data: dict[str, str | datetime]) -> bool:
 
 @refresh_token_decorator
 def get_habit_api(user: User) -> list[dict[str, str | int]] | None:
+    """
+    Функция получения всех привычек пользователя из API
+
+    :param user: Пользователь
+    :type user: User
+    :return: Список словарей привычек
+    :rtype: list[dict[str, str | int]] | None
+    """
+
     token: str = user.to_json().get("api_token")
     headers: dict[str, str] = {
         "Authorization": f"Bearer {token}",
@@ -62,6 +72,17 @@ def get_habit_api(user: User) -> list[dict[str, str | int]] | None:
 
 @refresh_token_decorator
 def remove_habit_api(user: User, habit_id: int) -> bool | None:
+    """
+    Функция удаления одной привычки пользователя через API
+
+    :param user: Пользователь
+    :type user: User
+    :param habit_id: ID привычки для удаления
+    :type habit_id: int
+    :return: True or False
+    :rtype: bool | None
+    """
+
     token: str = user.to_json().get("api_token")
     headers: dict[str, str] = {
         "Authorization": f"Bearer {token}",
@@ -79,6 +100,15 @@ def remove_habit_api(user: User, habit_id: int) -> bool | None:
 
 @refresh_token_decorator
 def remove_habit_api_all(user: User) -> bool | None:
+    """
+    Функция удаления всех привычек пользователя через API
+
+    :param user: Пользователь
+    :type user: User
+    :return: True or False
+    :rtype: bool | None
+    """
+
     token: str = user.to_json().get("api_token")
     headers: dict[str, str] = {
         "Authorization": f"Bearer {token}",
@@ -95,7 +125,22 @@ def remove_habit_api_all(user: User) -> bool | None:
 
 
 @refresh_token_decorator
-def edit_habit_api_all(user: User, habit_id: int, habit_data: dict[str, str]) -> bool | None:
+def edit_habit_api_all(
+    user: User, habit_id: int, habit_data: dict[str, str]
+) -> bool | None:
+    """
+    Функция полного редактирования привычки через API
+
+    :param user: Пользователь
+    :type user: User
+    :param habit_id: ID привычки для удаления
+    :type habit_id: int
+    :param habit_data: Обновлённые данные о привычке
+    :type habit_data: dict[str, str]
+    :return: True or False
+    :rtype: bool | None
+    """
+
     token: str = user.to_json().get("api_token")
     headers: dict[str, str] = {
         "Authorization": f"Bearer {token}",
@@ -118,7 +163,24 @@ def edit_habit_api_all(user: User, habit_id: int, habit_data: dict[str, str]) ->
 
 
 @refresh_token_decorator
-def edit_habit_api(user: User, habit_id: int, param: str, value: str | int) -> bool | None:
+def edit_habit_api(
+    user: User, habit_id: int, param: str, value: str | int
+) -> bool | None:
+    """
+    Функция Частичного редактирования привычки через API
+
+    :param user: Пользователь
+    :type user: User
+    :param habit_id: ID привычки для удаления
+    :type habit_id: int
+    :param param: Параметр значение которого будет обновлено
+    :type param: str
+    :param value: Значение параметра
+    :type value: str | int
+    :return: True or False
+    :rtype: bool | None
+    """
+
     token: str = user.to_json().get("api_token")
     headers: dict[str, str] = {
         "Authorization": f"Bearer {token}",
@@ -127,7 +189,9 @@ def edit_habit_api(user: User, habit_id: int, param: str, value: str | int) -> b
         param: value,
     }
 
-    response: Response = patch(f"{API_URL}/api/habits/{habit_id}", headers=headers, json=data)
+    response: Response = patch(
+        f"{API_URL}/api/habits/{habit_id}", headers=headers, json=data
+    )
 
     if response.status_code == 200:
         return True

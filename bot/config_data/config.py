@@ -9,11 +9,11 @@ if not find_dotenv():
 else:
     load_dotenv()
 
-API_URL = "http://127.0.0.1:8000"
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-API_KEY = os.getenv("API_KEY")
-URL = ""
-DEFAULT_COMMANDS = (
+API_URL: str = "http://127.0.0.1:8000"
+BOT_TOKEN: str = os.getenv("BOT_TOKEN")
+API_KEY: str = os.getenv("API_KEY")
+URL: str = ""
+DEFAULT_COMMANDS: tuple = (
     ("start", "Запустить бота"),
     ("help", "Вывести справку"),
     ("login", "Залогинится в бота"),
@@ -23,5 +23,5 @@ DEFAULT_COMMANDS = (
     ("track_habit", "Отметить выполнение привычек"),
     ("habit_stats", "Получение статистики по выполнению привычек")
 )
-path = os.path.abspath("log/debug.log")  # путь папки с логами
+path: str = os.path.abspath("log/debug.log")  # путь папки с логами
 # конфигурация логов

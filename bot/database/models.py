@@ -1,7 +1,3 @@
-"""Файл для взаимодействия с БД"""
-
-from typing import Dict
-
 from bot.database.database import Base, User, get_session
 from sqlalchemy import exists
 
@@ -77,7 +73,17 @@ def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> N
         session.commit()
 
 
-def update_user_tokens(telegram_id: int, token_data: Dict[str, str]) -> None:
+def update_user_tokens(telegram_id: int, token_data: dict[str, str]) -> None:
+    """
+    Функция обновления токенов пользователя
+
+    :param telegram_id: Телеграм ID пользователя
+    :type telegram_id: int
+    :param token_data: Словарь содержащий токены
+    :type token_data: dict[str, str]
+    :return: Ничего
+    :rtype: None
+    """
     with get_session() as session:
         user: User = (
             session.query(User).filter(User.telegram_id == telegram_id).one_or_none()

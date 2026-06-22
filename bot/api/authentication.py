@@ -1,12 +1,11 @@
-from typing import Callable, Any
 from functools import wraps
+from typing import Any, Callable
+
+from bot.database.database import User
+from bot.database.models import get_user_by_telegram_id, update_user_tokens
 from config_data.config import API_URL
 from requests import post
 from requests.models import Response
-from bot.database.models import update_user_tokens, get_user_by_telegram_id
-from bot.database.database import User
-from loader import bot
-from states.login import LoginState
 
 
 class ExpiredTokenError(Exception):
