@@ -10,17 +10,21 @@ from routers.auth_router import get_current_active_user
 from models.habits_models import get_all_habit, write_habits, get_habit_by_id, update_habit, delete_habit, \
     delete_habit_all
 from models.habit_tracking_models import habits_track_check, get_habit_track_statistic_all, \
-    get_habit_track_statistic_from_habit_id
-from shemas.habit_tracking_shemas import HabitCheck, HabitsTrackOut
+    get_habit_track_statistic_from_habit_id, get_habit_tracking_from_user, update_habit_track_alert_time
+from shemas.habit_tracking_shemas import HabitCheck, HabitsTrackOut, HabitTrackAlertTime
 from database.database import get_session, Habits
 
 router = APIRouter()
 
 
 @router.get("/habits_tracing/")
-async def habits_tracing():
+async def habits_tracing(
+        current_user: Annotated[User, Depends(get_current_active_user)],
+        session: AsyncSession = Depends(get_session)) -> JSONResponse:
     # Получить все привычки со временем
-    pass
+    result = await get_habit_tracking_from_user(session=session, user_id=current_user.id)
+    if result:
+        return JSONResponse(status_code=200, content={"result": jsonable_encoder(result)})
 
 
 @router.post("/habits_tracing/check/")
@@ -56,9 +60,13 @@ async def create_habits_tracking():
 
 
 @router.patch("/habits_tracking/alert_time/")
-async def update_habits_tracking_alert_time():
+async def update_habits_tracking_alert_time(
+        current_user: Annotated[User, Depends(get_current_active_user)],
+        alert_time: HabitTrackAlertTime,
+        session: AsyncSession = Depends(get_session)) -> JSONResponse:
     # Обновить время оповещения
-    pass
+    await update_habit_track_alert_time(session=session, habit_id=alert_time.habit_id, alert_time=alert_time.alert_time)
+    return JSONResponse(status_code=200, content={"result": "ok"})
 
 
 @router.patch("/habits_tracking/count/")
@@ -90,8 +98,8 @@ async def habits_tracking_statistic_all(
             "goal": i_habit.goal,
             "terms_date": i_habit.terms_date,
             "habit_tracking_statistics": [{"id": i_statistic.id, "habits_check_date": i_statistic.completion_date} for
-                                  i_statistic in i_habit.habit_tracking_statistics
-                                  ]}
+                                          i_statistic in i_habit.habit_tracking_statistics
+                                          ]}
         response.append(res)
 
     return JSONResponse(status_code=200, content={"result": jsonable_encoder(response)})
@@ -102,7 +110,7 @@ async def habits_tracking_statistic(
         habit_id: int,
         current_user: Annotated[User, Depends(get_current_active_user)],
         session: AsyncSession = Depends(get_session)):
-    result = await get_habit_track_statistic_from_habit_id(session=session, user_id=current_user.id,habit_id=habit_id)
+    result = await get_habit_track_statistic_from_habit_id(session=session, user_id=current_user.id, habit_id=habit_id)
 
     response = {
         "id": result.id,
@@ -111,6 +119,6 @@ async def habits_tracking_statistic(
         "goal": result.goal,
         "terms_date": result.terms_date,
         "habit_tracking_statistics": [{"id": i_statistic.id, "habits_check_date": i_statistic.completion_date} for
-                              i_statistic in result.habit_tracking_statistics
-                              ]}
+                                      i_statistic in result.habit_tracking_statistics
+                                      ]}
     return JSONResponse(status_code=200, content={"result": jsonable_encoder(response)})

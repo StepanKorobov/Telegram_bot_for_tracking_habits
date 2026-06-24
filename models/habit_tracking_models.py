@@ -14,6 +14,15 @@ from shemas.auth_shemas import User
 from shemas.habits_shemas import Habit
 
 
+async def get_habit_tracking_from_user(session: AsyncSession, user_id: int):
+    query = select(Habits).options(selectinload(Habits.habit_tracking))
+
+    result = await session.execute(query)
+    habits = result.scalars().all()
+
+    return habits
+
+
 async def write_track_habits(session: AsyncSession, habit_id: int) -> None:
     """
     Добавить запись в отслеживание привычки
@@ -103,3 +112,13 @@ async def get_habit_track_statistic_from_habit_id(session: AsyncSession, user_id
     habits = result.scalars().one_or_none()
 
     return habits
+
+
+async def update_habit_track_alert_time(session: AsyncSession, habit_id: int, alert_time: datetime.time) -> None:
+    query = update(HabitTracking).filter(HabitTracking.habits_id == habit_id).values(alert_time=alert_time)
+    try:
+        await session.execute(query)
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

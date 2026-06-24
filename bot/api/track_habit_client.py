@@ -7,6 +7,36 @@ from api.authentication import ExpiredTokenError, refresh_token, refresh_token_d
 
 
 @refresh_token_decorator
+def track_habit_get_all_api(user: User):
+    """
+    Функция для отметки выполнения привычки через API
+
+    :param user: Пользователь
+    :type user: User
+    :return: True or False
+    :rtype: bool
+    """
+
+    token: str = user.to_json().get("api_token")
+    headers: dict[str, str] = {
+        "Authorization": f"Bearer {token}",
+    }
+
+    response: Response = get(
+        f"{API_URL}/api/habits_tracing", headers=headers
+    )
+    result: dict = response.json()
+
+    if response.status_code == 200:
+        return result["result"]
+
+    elif response.status_code == 401:
+        raise ExpiredTokenError(user=user)
+
+    return False
+
+
+@refresh_token_decorator
 def track_habit_check_api(user: User, habit_id: int) -> bool:
     """
     Функция для отметки выполнения привычки через API

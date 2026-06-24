@@ -1,5 +1,5 @@
 from typing import List, Optional
-from datetime import date, datetime
+from datetime import date, datetime, time
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -22,3 +22,11 @@ class HabitsTrackOut(BaseModel):
     goal: str
     terms_date: date
     habits_check_date: List[HabitsStatisticOut] | None
+
+
+class HabitTrackAlertTime(BaseModel):
+    habit_id: int = Field(
+        ...,
+        title="Habit ID",
+    )
+    alert_time: time
