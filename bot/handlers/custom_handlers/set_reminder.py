@@ -1,3 +1,4 @@
+import datetime
 from typing import Dict, List
 from _io import BytesIO
 
@@ -6,7 +7,7 @@ from telebot.types import Message, CallbackQuery
 from api.authentication import get_token, registration_user
 from api.habit_client import add_habit_api, get_habit_api
 from api.track_habit_client import track_habit_check_api, track_habit_get_stats_all, track_habit_get_stats, \
-    track_habit_get_all_api
+    track_habit_get_all_api, track_habit_set_alert_time
 from database.models import add_user, get_user_by_telegram_id
 from loader import bot
 from states.stats_habit import StatsState
@@ -119,16 +120,22 @@ def stats_habit_name(call: CallbackQuery, current_user: User):
     minute = int(call.data.split("_")[3])
     with bot.retrieve_data(call.from_user.id) as data:
         data["minute"] = minute
-        hour = data.get("hour") if data.get("hour") > 10 else f"0{data.get("hour")}"
-        minute = data.get("minute") if data.get("minute") > 10 else f"0{data.get("minute")}"
+        hour = data.get("hour") if data.get("hour") > 9 else f"0{data.get("hour")}"
+        minute = data.get("minute") if data.get("minute") > 9 else f"0{data.get("minute")}"
 
+    result = track_habit_set_alert_time(user=current_user, habit_id=data["habit_id"], hour=hour, minute=minute)
+
+    if result:
         text = f"Для привычки установлено время напоминания {hour}:{minute}"
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            text=text,
-            reply_markup=None
-        )
+    else:
+        text = "Не удалось установить время напоминания"
+
+    bot.edit_message_text(
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        text=text,
+        reply_markup=None
+    )
 
     bot.delete_state(call.from_user.id, call.message.chat.id)
 

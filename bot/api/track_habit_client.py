@@ -1,6 +1,8 @@
+import datetime
+
 from bot.database.database import User
 from config_data.config import API_URL
-from requests import get, post
+from requests import get, post, patch
 from requests.models import Response
 
 from api.authentication import ExpiredTokenError, refresh_token, refresh_token_decorator
@@ -121,6 +123,29 @@ def track_habit_get_stats(user: User, habit_id: int) -> list[dict[str, str]] | N
 
     if response.status_code == 200:
         return response.json()["result"]
+    elif response.status_code == 401:
+        raise ExpiredTokenError(user=user)
+
+    return None
+
+
+@refresh_token_decorator
+def track_habit_set_alert_time(user: User, habit_id: int, hour, minute) -> bool | None:
+    token: str = user.to_json().get("api_token")
+    headers: dict[str, str] = {
+        "Authorization": f"Bearer {token}",
+    }
+    data: dict[str, str] = {
+        "habit_id": habit_id,
+        "alert_time": f"{hour}:{minute}",
+    }
+
+    response: Response = patch(
+        f"{API_URL}/api/habits_tracking/alert_time", headers=headers, json=data
+    )
+
+    if response.status_code == 200:
+        return True
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
 
