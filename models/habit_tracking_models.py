@@ -15,7 +15,7 @@ from shemas.habits_shemas import Habit
 
 
 async def get_habit_tracking_from_user(session: AsyncSession, user_id: int):
-    query = select(Habits).options(selectinload(Habits.habit_tracking))
+    query = select(Habits).join(Habits.user).where(Users.id == user_id).options(selectinload(Habits.habit_tracking))
 
     result = await session.execute(query)
     habits = result.scalars().all()
