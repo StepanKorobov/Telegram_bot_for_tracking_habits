@@ -1,8 +1,14 @@
-from telebot import TeleBot
+from telebot import TeleBot, apihelper
 from telebot.storage import StateMemoryStorage
 
 from config_data import config
 from bot.database.database import Base, engine
+
+if config.PROXY:
+    apihelper.proxy = {
+        'https': f'socks5h://{config.PROXY}',
+        'http': f'socks5h://{config.PROXY}',
+    }
 
 Base.metadata.create_all(bind=engine)
 storage = StateMemoryStorage()

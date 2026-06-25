@@ -12,6 +12,7 @@ else:
 API_URL: str = "http://127.0.0.1:8000"
 BOT_TOKEN: str = os.getenv("BOT_TOKEN")
 API_KEY: str = os.getenv("API_KEY")
+PROXY: str = os.getenv("PROXY")
 URL: str = ""
 DEFAULT_COMMANDS: tuple = (
     ("start", "Запустить бота"),
