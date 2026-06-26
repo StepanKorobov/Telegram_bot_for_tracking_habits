@@ -13,7 +13,7 @@ def generate_date_range(habits_data) -> Tuple[datetime, datetime, List[datetime]
     all_dates = []
     for habit in habits_data:
         for check in habit['habit_tracking_statistics']:
-            dt_str = check['habits_check_date']
+            dt_str = check['completion_date']
             dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
             all_dates.append(dt)
 
@@ -59,7 +59,7 @@ def get_graphs_habits(data):
 
             # Извлекаем даты и времена для этой привычки
             for check in check_dates:
-                dt_str = check['habits_check_date']
+                dt_str = check['completion_date']
                 dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
 
                 dates.append(dt)

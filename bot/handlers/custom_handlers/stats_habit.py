@@ -109,8 +109,8 @@ def stats_habit_name(call: CallbackQuery, current_user: User):
     :rtype: None
     """
 
-    habits: Dict = track_habit_get_stats(user=current_user, habit_id=int(call.data.split("_")[3]))
-    habits: List[Dict] = [habits]
+    habits: list = track_habit_get_stats(user=current_user, habit_id=int(call.data.split("_")[3]))
+    habits: List[Dict] = habits
 
     if habits:
         bot.delete_message(call.message.chat.id, call.message.message_id)

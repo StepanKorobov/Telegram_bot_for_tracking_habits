@@ -42,7 +42,7 @@ class HabitsOut(Habit):
 
 class HabitsListOut(BaseModel):
     habits: list[HabitsOut] = Field(
-        default_factory=list, gt=0, description="Список привычек. Может быть пустым."
+        default_factory=list, description="Список привычек. Может быть пустым."
     )
 
 

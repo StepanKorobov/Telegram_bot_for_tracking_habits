@@ -92,7 +92,7 @@ def track_habit_get_stats_all(user: User) -> list[dict[str, str]] | None:
     )
 
     if response.status_code == 200:
-        return response.json()["result"]
+        return response.json()["habits"]
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
 
@@ -122,7 +122,7 @@ def track_habit_get_stats(user: User, habit_id: int) -> list[dict[str, str]] | N
     )
 
     if response.status_code == 200:
-        return response.json()["result"]
+        return response.json()["habits"]
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
 
