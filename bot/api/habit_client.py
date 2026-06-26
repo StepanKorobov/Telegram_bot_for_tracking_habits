@@ -90,7 +90,7 @@ def remove_habit_api(user: User, habit_id: int) -> bool | None:
 
     response: Response = delete(f"{API_URL}/api/habits/{habit_id}", headers=headers)
 
-    if response.status_code == 200:
+    if response.status_code == 204:
         return True
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
@@ -116,7 +116,7 @@ def remove_habit_api_all(user: User) -> bool | None:
 
     response: Response = delete(f"{API_URL}/api/habits", headers=headers)
 
-    if response.status_code == 200:
+    if response.status_code == 204:
         return True
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
@@ -154,7 +154,7 @@ def edit_habit_api_all(
 
     response = put(f"{API_URL}/api/habits/{habit_id}", headers=headers, json=data)
 
-    if response.status_code == 200:
+    if response.status_code == 204:
         return True
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
@@ -193,7 +193,7 @@ def edit_habit_api(
         f"{API_URL}/api/habits/{habit_id}", headers=headers, json=data
     )
 
-    if response.status_code == 200:
+    if response.status_code == 204:
         return True
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
