@@ -1,171 +1,157 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
+
+from database.database import Habits, get_session
+from fastapi import APIRouter, Depends, HTTPException, status
+from models.habits_models import (
+    delete_habit_all,
+    delete_habit_from_id,
+    get_all_habit,
+    get_habit_by_id,
+    update_habit,
+    write_habits,
+)
+from shemas.auth_shemas import User
+from shemas.habits_shemas import (
+    Habit,
+    HabitsCreateOut,
+    HabitsListOut,
+    HabitsOut,
+    HabitUpdate,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shemas.auth_shemas import User
 from routers.auth_router import get_current_active_user
-
-from models.habits_models import get_all_habit, write_habits, get_habit_by_id, update_habit, delete_habit, \
-    delete_habit_all
-from shemas.habits_shemas import Habit, HabitsListOut, HabitsCreateOut, HabitsOut, HabitUpdate
-from database.database import get_session, Habits
 
 router = APIRouter()
 
 
-@router.get("/habits", response_model=HabitsListOut)
+@router.get("/habits", response_model=HabitsListOut, status_code=status.HTTP_200_OK)
 async def get_all_habits(
-        current_user: Annotated[User, Depends(get_current_active_user)],
-        session: AsyncSession = Depends(get_session)) -> JSONResponse:
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_session),
+):
     """
-    Эндпоинт для получения списка всех привычек пользователя
+    Получить список всех привычек текущего активного пользователя.
 
-    :param current_user: Текущий пользователь
-    :type current_user: Annotated[User, Depends(get_current_active_user)]
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Список привычек
-    :rtype: JSONResponse
+    Возвращает отформатированный список привычек в виде объекта HabitsListOut.
+    Доступ разрешён только авторизованным и активным пользователям.
     """
 
-    habits_list = await get_all_habit(session=session, user=current_user)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"habits": jsonable_encoder(habits_list)})
+    habits_list = await get_all_habit(session=session, user_id=current_user.id)
+    return HabitsListOut(habits=habits_list)
 
 
-@router.post("/habits", response_model=HabitsCreateOut)
-async def add_habits(current_user: Annotated[User, Depends(get_current_active_user)],
-                     habits: Habit,
-                     session: AsyncSession = Depends(get_session)) -> JSONResponse:
+@router.post(
+    "/habits", response_model=HabitsCreateOut, status_code=status.HTTP_201_CREATED
+)
+async def add_habits(
+    habits: Habit,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_session),
+):
     """
-    Эндпоинт для добавления новой привычки
+    Добавить новую привычку для текущего пользователя.
 
-    :param current_user: Текущий пользователь
-    :type current_user: Annotated[User, Depends(get_current_active_user)]
-    :param habits: Название и описание привычки
-    :type habits: Habits
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Результат и id привычки
-    :rtype: JSONResponse
+    Принимает данные привычки и сохраняет её в БД.
+    Возвращает ID созданной привычки.
     """
 
-    habit = await write_habits(session=session, user=current_user, habits=habits)
+    habit_id = await write_habits(
+        session=session, user_id=current_user.id, habit_data=habits
+    )
+    return HabitsCreateOut(habit_id=habit_id)
 
-    return JSONResponse(status_code=status.HTTP_201_CREATED, content={"result": True, "habit_id": habit})
 
-
-@router.get("/habits/{habit_id}", response_model=HabitsOut)
-async def get_habits_by_id(habit_id: int,
-                           current_user: Annotated[User, Depends(get_current_active_user)],
-                           session: AsyncSession = Depends(get_session)) -> JSONResponse:
+@router.get(
+    "/habits/{habit_id}", response_model=HabitsOut, status_code=status.HTTP_200_OK
+)
+async def get_habits_by_id(
+    habit_id: int,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_session),
+):
     """
-    Эндпоинт для получения привычки по ID
+    Получить привычку текущего активного пользователя по ID привычки
 
-    :param habit_id: ID привычки
-    :type habit_id: int
-    :param current_user: Текущий пользователь
-    :type current_user: Annotated[User, Depends(get_current_active_user)]
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: ID, название, описание привычки
-    :rtype: JSONResponse
-    """
-    habit = await get_habit_by_id(habit_id=habit_id, session=session)
-
-    if habit.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The habit does not belong to this user")
-
-    habit = {
-        "id": habit.id,
-        "habit_name": habit.habit_name,
-        "description": habit.description,
-    }
-
-    return JSONResponse(status_code=status.HTTP_200_OK, content=habit)
-
-
-@router.put("/habits/{habit_id}", response_model=HabitsCreateOut)
-async def update_habits(habit_id: int,
-                        habit: Habit,
-                        current_user: Annotated[User, Depends(get_current_active_user)],
-                        session: AsyncSession = Depends(get_session)) -> JSONResponse:
-    """
-    Эндпоинт для обновления привычки
-
-    :param habit_id: ID привычки
-    :type habit_id: int
-    :param habit: Название и описание привычки
-    :type habit: Habits
-    :param current_user: Текущий пользователь
-    :type current_user: Annotated[User, Depends(get_current_active_user)]
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Результат и id привычки
-    :rtype: JSONResponse
+    Возвращает отформатированную привычку в виде объекта HabitsOut.
+    Доступ разрешён только авторизованным и активным пользователям.
     """
 
-    await update_habit(habit_id=habit_id, habit=habit, user_id=current_user.id, session=session)
+    habit = await get_habit_by_id(
+        session=session, user_id=current_user.id, habit_id=habit_id
+    )
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True, "habit_id": habit_id})
+    return HabitsOut.model_validate(habit)
 
 
-@router.patch("/habits/{habit_id}")
-async def partial_update_habits(habit_id: int,
-                                habit: HabitUpdate,
-                                current_user: Annotated[User, Depends(get_current_active_user)],
-                                session: AsyncSession = Depends(get_session)) -> JSONResponse:
+@router.put("/habits/{habit_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def update_habits(
+    habit_id: int,
+    habit: Habit,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_session),
+):
     """
-    Эндпоинт для частичного обновления привычки
+    Обновить всю привычку текущего активного пользователя по ID привычки
 
-    :param habit_id: ID привычки
-    :type habit_id: int
-    :param habit: Название и описание привычки
-    :type habit: Habits
-    :param current_user: Текущий пользователь
-    :type current_user: Annotated[User, Depends(get_current_active_user)]
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Результат и id привычки
-    :rtype: JSONResponse
+    Принимает данные привычки и обновляет её в БД.
     """
 
-    await update_habit(habit_id=habit_id, habit=habit, user_id=current_user.id, session=session)
+    await update_habit(
+        session=session, user_id=current_user.id, habit_data=habit, habit_id=habit_id
+    )
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True, "habit_id": habit_id})
+    return None
 
 
-@router.delete("/habits/{habit_id}")
-async def delete_habits(habit_id: int,
-                        current_user: Annotated[User, Depends(get_current_active_user)],
-                        session: AsyncSession = Depends(get_session)) -> JSONResponse:
+@router.patch("/habits/{habit_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def partial_update_habits(
+    habit_id: int,
+    habit: HabitUpdate,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_session),
+):
     """
-    Эндпоинт для удаления привычки по id
+    Обновить частично привычку текущего активного пользователя по ID привычки
 
-    :param habit_id: ID привычки
-    :type habit_id: int
-    :param current_user: Текущий пользователь
-    :type current_user: Annotated[User, Depends(get_current_active_user)]
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Результат и id привычки
-    :rtype: JSONResponse
+    Принимает данные привычки и обновляет её в БД.
     """
 
-    await delete_habit(habit_id=habit_id, user_id=current_user.id, session=session)
+    await update_habit(
+        session=session, user_id=current_user.id, habit_data=habit, habit_id=habit_id
+    )
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True})
+    return None
 
 
-@router.delete("/habits")
-async def delete_habits_all(current_user: Annotated[User, Depends(get_current_active_user)],
-                            session: AsyncSession = Depends(get_session)) -> JSONResponse:
+@router.delete("/habits/{habit_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_habit(
+    habit_id: int,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_session),
+) -> None:
     """
-    Эндпоинт для удаления всех привычек пользователя
+    Удалить привычку текущего активного пользователя по ID привычки
 
+    Принимает ID привычки и удаляет её в БД.
     """
 
-    await  delete_habit_all(user_id=current_user.id, session=session)
+    await delete_habit_from_id(
+        session=session, user_id=current_user.id, habit_id=habit_id
+    )
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"result": True})
+    return None
+
+
+@router.delete("/habits", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_habits_all(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """
+    Удалить все привычки текущего активного пользователя
+    """
+
+    await delete_habit_all(user_id=current_user.id, session=session)
+
+    return None

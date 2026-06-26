@@ -1,55 +1,52 @@
-from typing import List
-
-from fastapi import HTTPException, status, Depends
+from database.database import Habits, Users, get_session
+from fastapi import Depends, HTTPException, status
+from shemas.auth_shemas import User
+from shemas.habits_shemas import Habit, HabitUpdate
+from sqlalchemy import delete, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql.functions import user
 
-from database.database import Users, Habits, get_session
-from shemas.auth_shemas import User
-from shemas.habits_shemas import Habit
 from models.habit_tracking_models import write_track_habits
 
 
-async def get_all_habit(user: Users, session: AsyncSession) -> List[Habits] | list:
+async def get_all_habit(session: AsyncSession, user_id: int) -> list[Habits]:
     """
-    Корутина для получения всех привычек у пользователя из БД
+    Получить все привычки пользователя из базы данных.
 
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :param user: Пользователь
-    :type user: Users
+    Args:
+        session: Асинхронная сессия БД.
+        user_id: ID текущего пользователь.
 
-    :return:
+    Returns:
+        Список словарей, где каждый словарь - представление одной привычки
+        (результат вызова to_json() для объекта Habits).
     """
-    query = select(Habits).filter(Habits.user_id == user.id)
+
+    query = select(Habits).where(Habits.user_id == user_id)
     result = await session.execute(query)
-    habits: List[Habits] = result.scalars().all()
+    habits: list[Habits] = result.scalars().all()
 
-    # habits_list = [{"id": i_habits.id, "habit_name": i_habits.habit_name, "description": i_habits.description} for
-    #                i_habits in habits]
-    habits_list = [i_habits.to_json() for i_habits in habits]
+    habits_list = [habit.to_json() for habit in habits]
 
     return habits_list
 
 
-async def write_habits(user: Users, habits: Habits, session: AsyncSession) -> int:
+async def write_habits(session: AsyncSession, user_id: int, habit_data: Habit) -> int:
     """
-    Корутина для записи привычки пользователя в БД
+    Создаёт привычку пользователя в БД и возвращает её ID.
 
-    :param user: Текущий пользователь
-    :type user: Users
-    :param habits: Привычка (название и описание)
-    :type habits: Habits
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: ID созданной привычки
-    :rtype: int
+    Args:
+        session: Асинхронная сессия БД.
+        user_id: ID текущего пользователь.
+        habit_data: Данные привычки (название и описание).
+
+    Returns:
+        ID созданной привычки.
     """
 
-    habits = Habits(**habits.__dict__, user_id=user.id)
+    habits = Habits(**habit_data.__dict__, user_id=user_id)
     session.add(habits)
 
     await session.commit()
@@ -59,18 +56,20 @@ async def write_habits(user: Users, habits: Habits, session: AsyncSession) -> in
     return habits.id
 
 
-async def get_habit_by_id(habit_id: int, session: AsyncSession) -> Habits:
+async def get_habit_by_id(session: AsyncSession, user_id: int, habit_id: int) -> Habits:
     """
-    Корутина для получения привычки по ID
+    Получить привычку пользователя по ID привычки.
 
-    :param habit_id: ID привычки
-    :type habit_id: int
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return:
+    Args:
+        session: Асинхронная сессия БД.
+        user_id: ID текущего пользователь.
+        habit_id: ID привычки
+
+    Returns:
+        Привычка (результат вызова to_json() для объекта Habits).
     """
 
-    query = select(Habits).filter(Habits.id == habit_id)
+    query = select(Habits).where(Habits.id == habit_id, Habits.user_id == user_id)
     result = await session.execute(query)
     habit = result.scalars().one_or_none()
 
@@ -80,34 +79,38 @@ async def get_habit_by_id(habit_id: int, session: AsyncSession) -> Habits:
     return habit
 
 
-async def update_habit(habit_id: int, habit: Habit, user_id: int, session: AsyncSession) -> None:
+async def update_habit(
+    session: AsyncSession, user_id: int, habit_data: Habit | HabitUpdate, habit_id: int
+) -> None:
     """
-    Корутина для обновления привычки (как частичного, так и полного)
+    Обновление привычки (как частичного, так и полного) у пользователя по ID привычки
 
-    :param habit_id: ID привычки
-    :type habit_id: int
-    :param habit: Название и описание привычки
-    :type habit: Habits
-    :param user_id: ID пользователя
-    :type user_id: int
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Ничего
-    :rtype: None
+    Args:
+        session: Асинхронная сессия БД.
+        user_id: ID текущего пользователь.
+        habit_data: Данные привычки (название и описание). Могут содержать не полные данные (частичное обновление).
+        habit_id: ID привычки
+
+    Returns:
+        None
     """
 
-    habits = dict()
+    habit: dict = {}
 
-    if habit.habit_name:
-        habits["habit_name"] = habit.habit_name
-    if habit.description:
-        habits["description"] = habit.description
-    if habit.goal:
-        habits["goal"] = habit.goal
-    if habit.terms_date:
-        habits["terms_date"] = habit.terms_date
+    if habit_data.habit_name:
+        habit["habit_name"] = habit_data.habit_name
+    if habit_data.description:
+        habit["description"] = habit_data.description
+    if habit_data.goal:
+        habit["goal"] = habit_data.goal
+    if habit_data.terms_date:
+        habit["terms_date"] = habit_data.terms_date
 
-    query = update(Habits).filter(Habits.id == habit_id, Habits.user_id == user_id).values(**habits)
+    query = (
+        update(Habits)
+        .where(Habits.id == habit_id, Habits.user_id == user_id)
+        .values(**habit)
+    )
 
     try:
         await session.execute(query)
@@ -117,18 +120,22 @@ async def update_habit(habit_id: int, habit: Habit, user_id: int, session: Async
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
-async def delete_habit(habit_id: int, user_id: int, session: AsyncSession) -> None:
+async def delete_habit_from_id(
+    session: AsyncSession, user_id: int, habit_id: int
+) -> None:
     """
-    Корутина для удаления привычки
+    Удаление привычки пользователя по ID привычки
 
-    :param habit_id: ID привычки
-    :type habit_id: int
-    :param user_id: ID пользователя
-    :type user_id: int
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Ничего
-    :rtype: None
+    Args:
+        session: Асинхронная сессия БД.
+        user_id: ID текущего пользователя.
+        habit_id: ID привычки
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException: 404, если привычка не найдена или не принадлежит пользователю.
     """
 
     query = select(Habits).filter(Habits.id == habit_id, Habits.user_id == user_id)
@@ -136,27 +143,33 @@ async def delete_habit(habit_id: int, user_id: int, session: AsyncSession) -> No
     habit = result.scalars().one_or_none()
 
     if habit is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The habit was not found or does not belong to the current user.",
+        )
 
     await session.delete(habit)
     await session.commit()
 
 
-async def delete_habit_all(user_id: int, session: AsyncSession) -> None:
+async def delete_habit_all(session: AsyncSession, user_id: int) -> None:
     """
-    Корутина для удаления всех привычек пользователя
+    Удалить все привычки пользователя по его ID.
 
-    :param user_id: ID пользователя
-    :type user_id: int
-    :param session: Асинхронная сессия
-    :type session: AsyncSession
-    :return: Ничего
-    :rtype: None
+    Args:
+        session: Асинхронная сессия БД.
+        user_id: ID текущего пользователя.
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException: 404, если привычка не найдена или не принадлежит пользователю.
     """
 
     query = delete(Habits).where(Habits.user_id == user_id)
     result = await session.execute(query)
     await session.commit()
-
-    if result.rowcount == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    #
+    # if result.rowcount == 0:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
