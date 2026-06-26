@@ -1,6 +1,6 @@
 FROM python:3.13.2-slim
 
-RUN pip install poetry
+RUN pip install --no-cache-dir poetry
 
 RUN poetry config virtualenvs.create false
 
@@ -8,7 +8,9 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 
-RUN poetry install --no-root
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-root --with api --no-interaction
+#RUN poetry install --no-root
 
 #COPY requirements.txt /app
 
