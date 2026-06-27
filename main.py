@@ -15,6 +15,10 @@ tags_metadata = [
         "name": "habits",
         "description": "Набор методов для работы с привычками.",
     },
+    {
+        "name": "habit_tracking",
+        "description": "Набор методов для отслеживания привычек."
+    }
 ]
 
 
