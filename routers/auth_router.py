@@ -1,35 +1,44 @@
 from typing import Annotated
+
+from database.database import Users, get_session
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
+from models.auth_models import write_user
 
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../database')))
-from shemas.auth_shemas import User, UserInDB, Token, UserIn, RefreshToken
-
+from shemas.auth_shemas import RefreshToken, TokenOut, User, UserIn, UserOut
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.database import get_session, Users
-from models.auth_models import write_user
-from utils.security import create_access_token, create_refresh_token, authenticate_user, get_current_active_user, \
-    get_password_hash, get_current_user_refresh
+from utils.security import (
+    authenticate_user,
+    create_access_token,
+    create_refresh_token,
+    get_current_active_user,
+    get_current_user_refresh,
+    get_password_hash,
+)
 
 # Создаём API роутер.
 router = APIRouter()
 
 
 # async def user_login(current_user: Annotated[User, Depends(get_current_user)]):
-@router.post("/auth/login")
-async def user_login(
-        user_data: UserIn,
-        session: AsyncSession = Depends(get_session)
-) -> User:
+@router.post("/auth/login", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def user_login(user_data: UserIn, session: AsyncSession = Depends(get_session)):
     """
-    Endpoint for user registration
+    Регистрация пользователя в API
+
+    Возвращает id пользователя username и telegram id.
     """
 
     user_data.password = get_password_hash(user_data.password)
     user = await write_user(session=session, user_data=user_data)
     if user:
-        return JSONResponse(status_code=status.HTTP_201_CREATED, content=user.to_json())
+        return UserOut(
+            id=user.id,
+            username=user.username,
+            telegram_id=user.telegram_id,
+        )
 
     raise HTTPException(
         status_code=status.HTTP_409_CONFLICT,
@@ -37,13 +46,15 @@ async def user_login(
     )
 
 
-@router.post("/auth/token")
+@router.post("/auth/token", response_model=TokenOut, status_code=status.HTTP_200_OK)
 async def login_for_access_token(
-        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-        session: AsyncSession = Depends(get_session)
-) -> Token:
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: AsyncSession = Depends(get_session),
+):
     """
-    The endpoint accepts the login and password, returning access and refresh tokens.
+    Получение access и refresh токенов по логину и паролю
+
+    Возвращает access toke, refresh token и тип токенов
     """
 
     user = await authenticate_user(session, form_data.username, form_data.password)
@@ -54,47 +65,58 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(
+    access_token: str = create_access_token(
         data={"sub": user.username, "telegram_id": user.telegram_id, "type": "access"},
     )
-    refresh_token = create_refresh_token(
+    refresh_token: str = create_refresh_token(
         data={"sub": user.username, "telegram_id": user.telegram_id, "type": "refresh"},
     )
 
-    return Token(access_token=access_token, refresh_token=refresh_token, token_type="Bearer")
+    return TokenOut(
+        access_token=access_token, refresh_token=refresh_token, token_type="Bearer"
+    )
 
 
 # async def refresh_token(user: Annotated[User, Depends(get_current_user_refresh)]) -> Token:
-@router.post("/auth/refresh_token")
+@router.post(
+    "/auth/refresh_token", response_model=TokenOut, status_code=status.HTTP_200_OK
+)
 async def access_refresh_token(
-        refresh_token_data: RefreshToken,
-        session: AsyncSession = Depends(get_session)
-) -> Token:
+    refresh_token_data: RefreshToken, session: AsyncSession = Depends(get_session)
+):
     """
-    Endpoint for updating access and refresh tokens using a refresh token
+    Обновить access и refresh токенов по refresh token
+
+    Возвращает access toke, refresh token и тип токенов
     """
 
-    user: Users = await get_current_user_refresh(token=refresh_token_data.refresh_token, session=session)
+    user: Users = await get_current_user_refresh(
+        session=session, refresh_token=refresh_token_data.refresh_token
+    )
 
-    access_token = create_access_token(
+    access_token: str = create_access_token(
         data={"sub": user.username, "telegram_id": user.telegram_id, "type": "access"},
     )
-    refresh_token = create_refresh_token(
+    refresh_token: str = create_refresh_token(
         data={"sub": user.username, "telegram_id": user.telegram_id, "type": "refresh"},
     )
 
-    return Token(access_token=access_token, refresh_token=refresh_token, token_type="Bearer")
+    return TokenOut(
+        access_token=access_token, refresh_token=refresh_token, token_type="Bearer"
+    )
 
 
-@router.get("/users/me/", response_model=UserInDB)
+@router.get("/users/me/")
 async def read_users_me(
-        current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
+    # Возвращает текущего пользователя
     return current_user
 
 
 @router.get("/users/me/items/")
 async def read_own_items(
-        current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ):
+    # Возвращает информацию о текущем пользователе
     return [{"item_id": "Foo", "owner": current_user.username}]
