@@ -1,12 +1,19 @@
 from datetime import date, datetime, time
-from typing import List, Optional
 
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, Integer, String, Time
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Time,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import (
+    DeclarativeBase,
     Mapped,
-    Relationship,
-    declarative_base,
     mapped_column,
     relationship,
     sessionmaker,
@@ -16,50 +23,53 @@ from sqlalchemy.orm.decl_api import DeclarativeMeta
 DATABASE_URL: str = "postgresql+asyncpg://admin:admin@127.0.0.1:5432/telegram"
 engine: AsyncEngine = create_async_engine(DATABASE_URL, echo=True)
 async_session: sessionmaker = sessionmaker(
-    engine, expire_on_commit=False, class_=AsyncSession
+    engine,
+    expire_on_commit=False,
+    class_=AsyncSession,
 )
-Base: DeclarativeMeta = declarative_base()
 
 
-# session = async_session()
+class Base(DeclarativeBase):
+    pass
 
 
 async def get_session() -> AsyncSession:
-    """Корутина для создания асинхронной сессии"""
+    """Возвращает асинхронную сессию БД."""
     async with async_session() as session:
         yield session
 
 
 async def create_tables():
-    """Корутина для создания таблиц"""
+    """Создает все таблицы в базе данных."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 
 class Users(Base):
-    """Таблица пользователей"""
+    """Пользователь Telegram-приложения."""
 
-    # Название таблицы
     __tablename__ = "users"
 
-    # Определяем поля таблицы
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(100), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    # Определяем связь One-to-Many с таблицей Habits
-    habits: Mapped[Optional["Habits"]] = relationship(
-        back_populates="user", cascade="all"
+    habits: Mapped[list["Habits"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
     )
-    # Определяем связь One-to-Many с таблицей HabitTrackingStatistics
-    habit_tracking_statistics: Mapped[Optional["HabitTrackingStatistics"]] = relationship(
-        back_populates="user", cascade="all"
+
+    habit_tracking_statistics: Mapped[list["HabitTrackingStatistics"]] = (
+        relationship(back_populates="user", cascade="all, delete-orphan")
     )
 
     def __repr__(self):
-        return f"username: {self.username}, telegram_id: {self.telegram_id}, is_active: {self.is_active}"
+        return (
+            f"username: {self.username},"
+            f"telegram_id: {self.telegram_id}"
+            f"is_active: {self.is_active}"
+        )
 
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -68,77 +78,100 @@ class Users(Base):
 class Habits(Base):
     """Таблица привычек"""
 
-    # Название таблицы
     __tablename__ = "habits"
 
-    # Определяем поля таблицы
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     habit_name: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     goal: Mapped[str] = mapped_column(String(50), nullable=False)
     terms_date: Mapped[date] = mapped_column(Date, nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
-    # Определяем связь Many-to-One с таблицей Users
-    user: Mapped[List["Users"]] = Relationship(back_populates="habits")
-    # Определяем связь One-to-Many с таблицей HabitTracking
-    habit_tracking: Mapped[Optional["HabitTracking"]] = relationship(
-        back_populates="habits", cascade="all"
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    #
-    habit_tracking_statistics: Mapped[List["HabitTrackingStatistics"]] = relationship(
-        back_populates="habits", cascade="all"
+
+    user: Mapped["Users"] = relationship(back_populates="habits")
+
+    habit_tracking: Mapped["HabitTracking"] = relationship(
+        back_populates="habits", cascade="all, delete-orphan"
+    )
+
+    habit_tracking_statistics: Mapped[list["HabitTrackingStatistics"]] = relationship(
+        back_populates="habits", cascade="all, delete-orphan"
     )
 
     def __repr__(self):
-        return f"habit_name: {self.habit_name}, description: {self.description}, goal: {self.goal}, terms_date: {self.terms_date},user_id: {self.user_id}"
+        return (
+            f"habit_name: {self.habit_name},"
+            f"description: {self.description},"
+            f"goal: {self.goal},"
+            f"terms_date: {self.terms_date},"
+            f"user_id: {self.user_id}"
+        )
 
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class HabitTracking(Base):
-    """Таблица для отслеживания привычек"""
+    """Таблица отслеживания выполнения привычек."""
 
-    # Название таблицы
     __tablename__ = "habit_tracking"
 
-    # Определяем поля таблицы
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    alert_time: Mapped[time] = mapped_column(Time, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    alert_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_completion_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    habits_id: Mapped[int] = mapped_column(ForeignKey("habits.id", ondelete="CASCADE"), nullable=False)
+    last_completion_date: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True
+    )
 
-    # Определяем связь Many-to-One с таблицей Habits
-    habits: Mapped[List["Habits"]] = Relationship(back_populates="habit_tracking")
+    habits_id: Mapped[int] = mapped_column(
+        ForeignKey("habits.id", ondelete="CASCADE"), nullable=False
+    )
+
+    habits: Mapped["Habits"] = relationship(back_populates="habit_tracking")
 
     def __repr__(self):
-        return f"alert_time: {self.alert_time}, count: {self.count}, last_completion_date: {self.last_completion_date},habits_id: {self.habits_id}"
+        return (
+            f"alert_time: {self.alert_time},"
+            f"count: {self.count},"
+            f"last_completion_date: {self.last_completion_date},"
+            f"habits_id: {self.habits_id}"
+        )
 
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 
 class HabitTrackingStatistics(Base):
-    """Таблица сбора статистики о датах выполнения привычек"""
+    """Таблица статистики выполнения привычек."""
 
-    # Название таблицы
     __tablename__ = "habit_tracking_statistics"
 
-    # Определяем поля таблицы
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    completion_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    habit_id: Mapped[int] = mapped_column(ForeignKey("habits.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    completion_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    # Определяем связь Many_to_One с таблицей Users
-    user: Mapped[List["Users"]] = Relationship(back_populates="habit_tracking_statistics")
-    # Определяем связь Many_to_One с таблицей Habits
-    habits: Mapped[List["Habits"]] = relationship(back_populates="habit_tracking_statistics")
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    habit_id: Mapped[int] = mapped_column(
+        ForeignKey("habits.id", ondelete="CASCADE"), nullable=False
+    )
+
+    user: Mapped[list["Users"]] = relationship(
+        back_populates="habit_tracking_statistics"
+    )
+
+    habits: Mapped[list["Habits"]] = relationship(
+        back_populates="habit_tracking_statistics"
+    )
 
     def __repr__(self):
-        return f"completion_date: {self.completion_date}, user_id: {self.user_id}, habit_id: {self.habit_id}"
+        return (
+            f"completion_date: {self.completion_date},"
+            f"user_id: {self.user_id},"
+            f"habit_id: {self.habit_id}"
+        )
 
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
