@@ -30,7 +30,7 @@ def track_habit_get_all_api(user: User):
     result: dict = response.json()
 
     if response.status_code == 200:
-        return result["result"]
+        return result["habits"]
 
     elif response.status_code == 401:
         raise ExpiredTokenError(user=user)
