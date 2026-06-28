@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from sqlalchemy import Integer, String, create_engine
+from sqlalchemy import Integer, String, create_engine, BigInteger
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 engine = create_engine("sqlite:///database.db")
@@ -34,10 +34,10 @@ class User(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    telegram_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
-    api_token: Mapped[str] = mapped_column(String)
-    api_token_refresh: Mapped[str] = mapped_column(String)
+    username: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    api_token: Mapped[str] = mapped_column(String(256))
+    api_token_refresh: Mapped[str] = mapped_column(String(256))
 
     def __repr__(self):
         return f"username: {self.username}, telegram_id: {self.telegram_id}, api_token: {self.api_token}, api_token_refresh: {self.api_token_refresh}"
