@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from sqlalchemy import Integer, String, create_engine, BigInteger
+from sqlalchemy import BigInteger, Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 engine = create_engine("sqlite:///database.db")
@@ -40,7 +40,12 @@ class User(Base):
     api_token_refresh: Mapped[str] = mapped_column(String(256))
 
     def __repr__(self):
-        return f"username: {self.username}, telegram_id: {self.telegram_id}, api_token: {self.api_token}, api_token_refresh: {self.api_token_refresh}"
+        return (
+            f"username: {self.username},"
+            f"telegram_id: {self.telegram_id},"
+            f"api_token: {self.api_token},"
+            f"api_token_refresh: {self.api_token_refresh}"
+        )
 
     def to_json(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
