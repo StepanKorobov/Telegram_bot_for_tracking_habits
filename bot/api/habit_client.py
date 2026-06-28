@@ -11,14 +11,18 @@ from api.authentication import ExpiredTokenError, refresh_token, refresh_token_d
 @refresh_token_decorator
 def add_habit_api(user: User, habit_data: dict[str, str | datetime]) -> bool:
     """
-    Функция добавления нового пользователя в API
+    Добавить новую привычку.
 
-    :param user: Пользователь
-    :type user: User
-    :param habit_data: Словарь с привычкой
-    :type habit_data: Dict
-    :return: True or False
-    :rtype: bool
+    Args:
+        user: Пользователь User.
+        habit_data: Словарь содержащий информацию о привычке.
+
+    Returns:
+        True в случае успеха.
+        False не удалось добавить привычку.
+
+    Raises:
+        ExpiredTokenError: В случае 401 ошибки (невалидный токен).
     """
 
     token: str = user.to_json().get("api_token")
@@ -45,12 +49,17 @@ def add_habit_api(user: User, habit_data: dict[str, str | datetime]) -> bool:
 @refresh_token_decorator
 def get_habit_api(user: User) -> list[dict[str, str | int]] | None:
     """
-    Функция получения всех привычек пользователя из API
+    Получить все привычки пользователя.
 
-    :param user: Пользователь
-    :type user: User
-    :return: Список словарей привычек
-    :rtype: list[dict[str, str | int]] | None
+    Args:
+        user: Пользователь User.
+
+    Returns:
+        Лист привычек в случае успеха.
+        None в случе отсутствия привычек.
+
+    Raises:
+        ExpiredTokenError: В случае 401 ошибки (невалидный токен).
     """
 
     token: str = user.to_json().get("api_token")
@@ -73,14 +82,18 @@ def get_habit_api(user: User) -> list[dict[str, str | int]] | None:
 @refresh_token_decorator
 def remove_habit_api(user: User, habit_id: int) -> bool | None:
     """
-    Функция удаления одной привычки пользователя через API
+    Удаление одной привычки пользователя.
 
-    :param user: Пользователь
-    :type user: User
-    :param habit_id: ID привычки для удаления
-    :type habit_id: int
-    :return: True or False
-    :rtype: bool | None
+    Args:
+        user: Пользователь User.
+        habit_id: ID привычки.
+
+    Returns:
+        True в случае успеха.
+        False не удалось удалить привычку.
+
+    Raises:
+        ExpiredTokenError: В случае 401 ошибки (невалидный токен).
     """
 
     token: str = user.to_json().get("api_token")
@@ -101,12 +114,17 @@ def remove_habit_api(user: User, habit_id: int) -> bool | None:
 @refresh_token_decorator
 def remove_habit_api_all(user: User) -> bool | None:
     """
-    Функция удаления всех привычек пользователя через API
+    Удаление всех привычек пользователя.
 
-    :param user: Пользователь
-    :type user: User
-    :return: True or False
-    :rtype: bool | None
+    Args:
+        user: Пользователь User.
+
+    Returns:
+        True в случае успеха.
+        False не удалось удалить привычки.
+
+    Raises:
+        ExpiredTokenError: В случае 401 ошибки (невалидный токен).
     """
 
     token: str = user.to_json().get("api_token")
@@ -129,16 +147,19 @@ def edit_habit_api_all(
     user: User, habit_id: int, habit_data: dict[str, str]
 ) -> bool | None:
     """
-    Функция полного редактирования привычки через API
+    Полное редактирование привычки через API.
 
-    :param user: Пользователь
-    :type user: User
-    :param habit_id: ID привычки для удаления
-    :type habit_id: int
-    :param habit_data: Обновлённые данные о привычке
-    :type habit_data: dict[str, str]
-    :return: True or False
-    :rtype: bool | None
+    Args:
+        user: Пользователь User.
+        habit_id: ID привычки.
+        habit_data: Словарь содержащий информацию о привычке.
+
+    Returns:
+        True в случае успеха.
+        False не удалось обновить привычку.
+
+    Raises:
+        ExpiredTokenError: В случае 401 ошибки (невалидный токен).
     """
 
     token: str = user.to_json().get("api_token")
@@ -167,18 +188,20 @@ def edit_habit_api(
     user: User, habit_id: int, param: str, value: str | int
 ) -> bool | None:
     """
-    Функция Частичного редактирования привычки через API
+    Частичное редактирование привычки через API (1 параметр).
 
-    :param user: Пользователь
-    :type user: User
-    :param habit_id: ID привычки для удаления
-    :type habit_id: int
-    :param param: Параметр значение которого будет обновлено
-    :type param: str
-    :param value: Значение параметра
-    :type value: str | int
-    :return: True or False
-    :rtype: bool | None
+    Args:
+        user: Пользователь User.
+        habit_id: ID привычки.
+        param: Параметр, который будем редактировать.
+        value: Значение, которое будем вписывать в параметр.
+
+    Returns
+        True в случае успеха.
+        False не удалось отредактировать привычку.
+
+    Raises:
+        ExpiredTokenError: В случае 401 ошибки (невалидный токен).
     """
 
     token: str = user.to_json().get("api_token")

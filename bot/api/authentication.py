@@ -26,16 +26,15 @@ class TokenRefreshFailed(Exception):
 
 def registration_user(telegram_id: int, username: str, password: str) -> bool | None:
     """
-    Функция регистрации пользователя в API
+    Регистрация пользователя по логину, паролю, telegram ID
 
-    :param telegram_id: Телеграм ID пользователя
-    :type telegram_id: int
-    :param username: Имя пользователя в телеграмме
-    :type username: str
-    :param password: Пароль пользователя
-    :type password: str
-    :return: True or False
-    :rtype: bool
+    Args:
+        telegram_id: Telegram ID пользователя.
+        username: Имя пользователя в telegram.
+        password: Пароль введённый пользователем.
+
+    Returns:
+        True случае успеха, None  случае неуспешной регистрации.
     """
 
     json_data: dict[str, str | int] = {
@@ -51,21 +50,22 @@ def registration_user(telegram_id: int, username: str, password: str) -> bool | 
 
 def get_token(username: str, password: str) -> dict[str, str] | None:
     """
-    Функция для получения токена из API по логину и паролю
+    Получение access и refresh токенов по логину и паролю.
 
-    :param username: Имя пользователя в телеграмме
-    :type username: str
-    :param password: Пароль пользователя
-    :type password: str
-    :return: Словарь с токенами | Ничего
-    :rtype: dict[str, str] | None
+    Args:
+        username: Имя пользователя в telegram.
+        password: Пароль введённый пользователем.
+
+    Returns:
+        Словарь содержащий токены и их тип.
+        None в случае неуспешного запроса.
     """
 
-    from_data: dict[str, str | int] = {
+    form_data: dict[str, str | int] = {
         "username": username,
         "password": password,
     }
-    response: Response = post(f"{API_URL}/api/auth/token", data=from_data)
+    response: Response = post(f"{API_URL}/api/auth/token", data=form_data)
     if response.status_code == 200:
         return response.json()
     return None
@@ -73,11 +73,14 @@ def get_token(username: str, password: str) -> dict[str, str] | None:
 
 def refresh_token(token: str) -> dict[str, str] | None:
     """
-    Функция для обновления токена из API по refresh_token
-    :param token: refresh_token
-    :type token: str
-    :return: Новые токены
-    :rtype: dict[str, str] | None
+    Обновление access токена по refresh токену.
+
+    Args:
+        token: Access token пользователя.
+
+    Returns:
+        Словарь содержащий токены и их тип.
+        None в случае неуспешного запроса.
     """
 
     json_data: dict[str, str] = {
