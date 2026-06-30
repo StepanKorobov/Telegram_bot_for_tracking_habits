@@ -1,14 +1,12 @@
-from typing import Dict, List
-
-
-def displaying_habit(hobit_list: List[Dict]) -> str:
+def displaying_habit(hobit_list: list[dict[str, str | int]]) -> str:
     """
-    Функция для формирования строки с привычками
+    Формирование строки с привычками
 
-    :param hobit_list: Список словарей с привычками
-    :type hobit_list: List[Dict]
-    :return: Строку с оформлением привычек
-    :rtype: str
+    Args:
+        hobit_list: Сообщение с данными
+
+    Returns:
+        Строку содержащую привычки
     """
 
     text: str = "Ваши привычки📈\n\n"
