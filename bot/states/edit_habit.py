@@ -2,6 +2,8 @@ from telebot.handler_backends import State, StatesGroup
 
 
 class EditState(StatesGroup):
+    """Состояния для редактирования привычки."""
+
     edit = State()
     option = State()
     name = State()
@@ -10,6 +12,3 @@ class EditState(StatesGroup):
     terms = State()
     remove = State()
     name_desc_goal_only = State()
-    description_only = State()
-    goal_only = State()
-    term_only = State()
