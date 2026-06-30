@@ -9,11 +9,27 @@ from utils.user_decorator import check_user_registration, with_current_user
 @bot.message_handler(commands=["habit"])
 @with_current_user
 def get_habit(message: Message, current_user: User):
-    """Команда получения списка всех привычек"""
+    """
+    Команда получения списка всех привычек
+
+    Args:
+        message: Сообщение с данными
+
+    Returns:
+        None
+    """
+
+    chat_id: int = message.chat.id
 
     habits: str | None = get_habit_api(user=current_user)
     if habits:
         habits: str = displaying_habit(habits)
-        bot.send_message(message.from_user.id, habits)
+        bot.send_message(
+            chat_id=chat_id,
+            text=habits,
+        )
     else:
-        bot.send_message(message.from_user.id, "У Вас пока ещё нет привычек")
+        bot.send_message(
+            chat_id=chat_id,
+            text="У Вас пока ещё нет привычек",
+        )
