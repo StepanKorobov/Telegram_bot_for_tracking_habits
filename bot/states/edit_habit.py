@@ -12,3 +12,4 @@ class EditState(StatesGroup):
     terms = State()
     remove = State()
     name_desc_goal_only = State()
+    term_only = State()

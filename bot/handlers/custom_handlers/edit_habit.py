@@ -462,6 +462,24 @@ def cal(call: CallbackQuery, current_user: User) -> None:
         )
 
 
+@bot.message_handler(state=EditState.term_only)
+def cal(message: Message) -> None:
+    """
+    Когда активен календарь, выводит сообщение пользователю
+
+    Args:
+        message: Сообщение с данными
+
+    Returns:
+        None
+    """
+
+    bot.send_message(
+        chat_id=message.chat.id,
+        text="Ошибка: Необходимо выбрать дату в меню выше.",
+    )
+
+
 @bot.callback_query_handler(
     state=EditState.edit, func=lambda call: call.data.startswith("habit_remove_id_")
 )
