@@ -8,12 +8,13 @@ from utils.user_decorator import check_user_registration, with_current_user
 
 @bot.message_handler(commands=["habit"])
 @with_current_user
-def get_habit(message: Message, current_user: User):
+def get_habit(message: Message, current_user: User) -> None:
     """
     Команда получения списка всех привычек
 
     Args:
         message: Сообщение с данными
+        current_user: текущий пользователь полученные из БД
 
     Returns:
         None
