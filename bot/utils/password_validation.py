@@ -9,15 +9,16 @@ pattern = re.compile(r"[a-zA-Z0-9]+")
 
 def password_validator(password: str) -> bool:
     """
-    Функция валидации пароля
+    Валидация пароля.
 
-    :param password: Пароль пользователя
-    :type password: str
-    :return: True or False
-    :rtype: bool
+    Args:
+        password: Пароль пользователя.
+
+    Returns:
+        True в случае прохождения валидации, False при невалидном пароле.
     """
 
-    result = pattern.fullmatch(password)
+    result: re.Match | None = pattern.fullmatch(password)
 
     if result:
         return True
