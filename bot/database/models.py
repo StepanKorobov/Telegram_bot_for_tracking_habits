@@ -11,17 +11,18 @@ def create_tables():
 
 def get_user_by_telegram_id(telegram_id: int) -> User | None:
     """
-    Функция поиска пользователя по telegram_id
+    Получить пользователя по telegram_id.
 
-    :param telegram_id: Телеграм ID пользователя
-    :type telegram_id: int
-    :return: User or None
-    :rtype: User | None
+    Args:
+        telegram_id: Telegram ID пользователя.
+
+    Returns:
+        Модель User в случае успеха, None в случае отсутствия пользователя.
     """
 
     with get_session() as session:
         user: User | None = (
-            session.query(User).filter(User.telegram_id == telegram_id).one_or_none()
+            session.query(User).where(User.telegram_id == telegram_id).one_or_none()
         )
 
         return user
@@ -29,12 +30,13 @@ def get_user_by_telegram_id(telegram_id: int) -> User | None:
 
 def check_user_by_telegram_id(telegram_id: int) -> bool:
     """
-    Функция проверки существования записи о пользователе в БД по telegram_id
+    Проверка существования записи о пользователе в БД по telegram ID
 
-    :param telegram_id: Телеграм ID пользователя
-    :type telegram_id: int
-    :return: True or False
-    :rtype: bool
+    Args:
+        telegram_id: Telegram ID пользователя.
+
+    Returns:
+        True в случае если пользователь есть, False в случае отсутствия записи о пользователе.
     """
 
     with get_session() as session:
@@ -45,20 +47,20 @@ def check_user_by_telegram_id(telegram_id: int) -> bool:
         return user_exist
 
 
-def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> None:
+def add_user(
+    username: str, telegram_id: int, api_token: str, api_token_refresh: str
+) -> None:
     """
-    Функция добавления нового пользователя
+    Добавление нового пользователя в БД.
 
-    :param username: Имя пользователя в телеграм
-    :type username: str
-    :param telegram_id: Телеграм ID пользователя
-    :type telegram_id: int
-    :param api_token: API ключ
-    :type api_token: str
-    :param api_token_refresh: API ключ для обновления основного
-    :type api_token_refresh: str
-    :return: Ничего
-    :rtype: None
+    Args:
+        username: Имя пользователя в telegram.
+        telegram_id: Telegram ID пользователя.
+        api_token: Токен для аутентификации в API.
+        api_token_refresh: Токен для обновления access токена.
+
+    Returns:
+        None.
     """
 
     with get_session() as session:
@@ -75,15 +77,16 @@ def add_user(username: str, telegram_id: int, api_token, api_token_refresh) -> N
 
 def update_user_tokens(telegram_id: int, token_data: dict[str, str]) -> None:
     """
-    Функция обновления токенов пользователя
+    Обновление токенов в БД по telegram ID.
 
-    :param telegram_id: Телеграм ID пользователя
-    :type telegram_id: int
-    :param token_data: Словарь содержащий токены
-    :type token_data: dict[str, str]
-    :return: Ничего
-    :rtype: None
+    Args:
+        telegram_id: Telegram ID пользователя.
+        token_data: Словарь содержащий access, refresh токены, а так же тип токенов.
+
+    Returns:
+        None.
     """
+
     with get_session() as session:
         user: User = (
             session.query(User).filter(User.telegram_id == telegram_id).one_or_none()
