@@ -9,7 +9,7 @@ class HabitsTracking(BaseModel):
     id: int = Field(
         ..., title="Habit ID", gt=0, description="Уникальный ID отслеживания привычки"
     )
-    alert_time: date | None = Field(
+    alert_time: time | None = Field(
         ..., title="Время оповещения", description="Время оповещения пользователя"
     )
     count: int = Field(

@@ -73,7 +73,7 @@ def set_reminder_change_habit(call: CallbackQuery) -> None:
         data["habit_id"] = habit_id
 
     bot.edit_message_text(
-        chat_id=habit_id,
+        chat_id=chat_id,
         message_id=message_id,
         text="Выберете час для уведомления:",
         reply_markup=set_reminder_hour_keyboard(),
