@@ -1,12 +1,11 @@
-from database.database import engine, Base
 from contextlib import asynccontextmanager
 
-import uvicorn
 from fastapi import FastAPI
-from database.database import create_tables
-from routers import auth_router, habits_router, habit_tracking_router
 
-tags_metadata = [
+from database.database import create_tables
+from routers import auth_router, habit_tracking_router, habits_router
+
+tags_metadata: list[dict[str, str]] = [
     {
         "name": "auth",
         "description": "Набор методов для регистрации и получения токенов.",
@@ -17,8 +16,8 @@ tags_metadata = [
     },
     {
         "name": "habit_tracking",
-        "description": "Набор методов для отслеживания привычек."
-    }
+        "description": "Набор методов для отслеживания привычек.",
+    },
 ]
 
 
@@ -35,9 +34,9 @@ app: FastAPI = FastAPI(
     title="Habits app",
     description="Api для хранения данных о привычках пользователей",
     # version="0.3.1",
-    version="0.4.3",
+    version="0.5.1",
     lifespan=lifespan,
-    openapi_tags=tags_metadata
+    openapi_tags=tags_metadata,
 )
 
 # Роут для работы с авторизацией и аутентификацией
