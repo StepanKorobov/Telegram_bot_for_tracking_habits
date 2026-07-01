@@ -552,7 +552,7 @@ def delete_all_habits(call: CallbackQuery, current_user: User) -> None:
     )
     bot.delete_state(
         user_id=user_id,
-        message_id=message_id,
+        chat_id=chat_id,
     )
 
 
