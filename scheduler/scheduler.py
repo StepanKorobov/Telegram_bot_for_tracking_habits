@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from config import DATABASE_URL, BOT_TOKEN
 # scheduler/scheduler.py
 from datetime import datetime
 import time
@@ -9,14 +10,11 @@ import telebot
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import select
 
-from database.database import Users, Habits, HabitTracking
-
-DATABASE_URL = "postgresql+psycopg2://admin:admin@127.0.0.1:5432/telegram"
+from database import Users, Habits, HabitTracking
 
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
-BOT_TOKEN = "YOUR_TOKEN"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 scheduler = BackgroundScheduler()
@@ -47,7 +45,3 @@ def start_scheduler():
             time.sleep(1)
     except KeyboardInterrupt:
         scheduler.shutdown()
-
-
-if __name__ == "__main__":
-    start_scheduler()

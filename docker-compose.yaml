@@ -14,9 +14,9 @@ services:
     volumes:
       - ./db/:/var/lib/postgresql
     hostname: "database"
-#    networks:
-#      - habit_network
-#
+    networks:
+      - habit_network
+
 #  app:
 #    container_name: fastapi
 #    build:
@@ -41,6 +41,21 @@ services:
 #    env_file:
 #      - .env
 #
-#networks:
-#  habit_network:
-#    driver: bridge
+
+  scheduler:
+    container_name: scheduler
+    build:
+      context: .
+      dockerfile: DockerfileScheduler
+    stop_signal: SIGTERM
+    restart: always
+    environment:
+      - TZ=${APP_TIMEZONE}
+    env_file:
+      - .env
+    networks:
+      - habit_network
+
+networks:
+  habit_network:
+    driver: bridge
