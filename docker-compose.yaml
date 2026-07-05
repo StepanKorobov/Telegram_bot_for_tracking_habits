@@ -21,7 +21,7 @@ services:
 #    container_name: fastapi
 #    build:
 #      context: .
-#      dockerfile: Dockerfile
+#      dockerfile: DockerfileApi
 #    stop_signal: SIGTERM
 #    restart: always
 #    ports:
@@ -35,7 +35,7 @@ services:
 #    container_name: telebot
 #    build:
 #      context: .
-#      dockerfile: Dockerfilebot
+#      dockerfile: DockerfileBot
 #    stop_signal: SIGTERM
 #    restart: always
 #    env_file:
