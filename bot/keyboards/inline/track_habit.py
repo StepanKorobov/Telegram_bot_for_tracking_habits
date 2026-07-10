@@ -2,7 +2,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def track_habits_keyboard(
-    habit_list: list[dict[str, str | int]],
+        habit_list: list[dict[str, str | int]],
 ) -> InlineKeyboardMarkup:
     """
     Клавиатура отслеживания привычек (содержит привычки).
@@ -21,11 +21,14 @@ def track_habits_keyboard(
             InlineKeyboardButton(
                 text=f"{i_habit["name"]}",
                 callback_data=f"track_habit_id_{i_habit["id"]}",
-            )
+            ),
         )
 
     kb.row(
-        InlineKeyboardButton(text="Закрыть", callback_data=f"clear_menu"),
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
     )
 
     return kb
@@ -51,10 +54,16 @@ def track_habits_confirmation_keyboard(habit_id: int) -> InlineKeyboardMarkup:
         )
     )
     kb.row(
-        InlineKeyboardButton(text="Назад", callback_data="track_habit"),
+        InlineKeyboardButton(
+            text="Назад",
+            callback_data="track_habit",
+        ),
     )
     kb.row(
-        InlineKeyboardButton(text="Закрыть", callback_data="clear_menu"),
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
     )
 
     return kb

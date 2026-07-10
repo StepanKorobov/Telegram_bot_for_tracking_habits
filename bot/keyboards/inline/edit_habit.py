@@ -27,7 +27,7 @@ def edit_habits_keyboard(habits_list: list[dict]) -> InlineKeyboardMarkup:
         ),
         InlineKeyboardButton(
             text="Закрыть",
-            callback_data="clear_menu",
+            callback_data="clear_keyboard",
         ),
     )
 
@@ -56,6 +56,12 @@ def edit_hobit_id_keyboard(habit_id: int) -> InlineKeyboardMarkup:
             callback_data=f"habit_remove_id_{habit_id}",
         ),
     )
+    kb.row(
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
+    )
 
     return kb
 
@@ -74,28 +80,35 @@ def edit_hobit_id_choice_keyboard(habit_id: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup()
     kb.row(
         InlineKeyboardButton(
-            text="Название", callback_data=f"habit_choice_id_name_{habit_id}"
-        )
+            text="Всё",
+            callback_data=f"habit_choice_id_all_{habit_id}",
+        ),
     )
     kb.row(
         InlineKeyboardButton(
-            text="Описание", callback_data=f"habit_choice_id_description_{habit_id}"
-        )
+            text="Название",
+            callback_data=f"habit_choice_id_name_{habit_id}",
+        ),
+        InlineKeyboardButton(
+            text="Описание",
+            callback_data=f"habit_choice_id_description_{habit_id}",
+        ),
     )
     kb.row(
         InlineKeyboardButton(
-            text="Цель", callback_data=f"habit_choice_id_goal_{habit_id}"
-        )
+            text="Цель",
+            callback_data=f"habit_choice_id_goal_{habit_id}",
+        ),
+        InlineKeyboardButton(
+            text="Срок",
+            callback_data=f"habit_choice_id_terms_{habit_id}",
+        ),
     )
     kb.row(
         InlineKeyboardButton(
-            text="Срок", callback_data=f"habit_choice_id_terms_{habit_id}"
-        )
-    )
-    kb.row(
-        InlineKeyboardButton(
-            text="Всё", callback_data=f"habit_choice_id_all_{habit_id}"
-        )
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
     )
 
     return kb

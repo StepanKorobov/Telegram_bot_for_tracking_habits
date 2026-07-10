@@ -1,12 +1,12 @@
 import random
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from io import BytesIO
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 
 
-def get_date_range(habits_data) -> tuple[datetime, datetime, list[datetime]]:
+def get_date_range(habits_data) -> tuple[date, date, list[datetime]]:
     """
     Получение минимальной, максимальной даты, так же список дат для отображения на графике на оси X.
 
@@ -25,7 +25,11 @@ def get_date_range(habits_data) -> tuple[datetime, datetime, list[datetime]]:
             all_dates.append(dt)
 
     # сортируем
-    date_sort: list = sorted(all_dates) if all_dates else [datetime.now()]
+    date_sort: list = (
+        list(map(lambda x: x.date(), sorted(all_dates)))
+        if all_dates
+        else [datetime.now()]
+    )
     min_date: datetime = (
         date_sort[0] - timedelta(days=1)
         if all_dates
@@ -36,12 +40,12 @@ def get_date_range(habits_data) -> tuple[datetime, datetime, list[datetime]]:
         if all_dates
         else datetime.now() + timedelta(days=1)
     )
-    date_ticks: list = []
+    date_ticks: list = [date_sort[0]]
 
     current_date = date_sort[0]
     while current_date < date_sort[-1]:
-        date_ticks.append(current_date)
         current_date += timedelta(days=1)
+        date_ticks.append(current_date)
 
     return min_date, max_date, date_ticks
 
@@ -93,8 +97,9 @@ def get_graphs_habits(data: list) -> BytesIO:
                 times.append(time_hours)
 
             # === СТАВИМ ТОЛЬКО НАШИ ТОЧКИ ===
-            dates_sorted = sorted(dates)
-            times_sorted = [times[dates.index(d)] for d in dates_sorted]
+            datetime_sorted: list = sorted(dates)
+            times_sorted: list = [times[dates.index(d)] for d in datetime_sorted]
+            dates_sorted: list = [d.date() for d in datetime_sorted]
 
             ax.scatter(
                 dates_sorted,

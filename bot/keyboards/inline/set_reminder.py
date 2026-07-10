@@ -24,7 +24,10 @@ def set_reminder_keyboard(habits: list[dict]) -> InlineKeyboardMarkup:
         )
 
     kb.row(
-        InlineKeyboardButton(text="Закрыть", callback_data="clear_menu"),
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
     )
 
     return kb
@@ -62,6 +65,12 @@ def set_reminder_hour_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"habit_reminder_hour_{i_hour + 3}",
             ),
         )
+    kb.row(
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
+    )
 
     return kb
 
@@ -95,5 +104,11 @@ def set_reminder_minute_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"habit_reminder_minute_{i_minute + 10}",
             ),
         )
+    kb.row(
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
+    )
 
     return kb

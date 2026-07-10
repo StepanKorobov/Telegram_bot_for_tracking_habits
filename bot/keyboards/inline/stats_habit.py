@@ -27,7 +27,10 @@ def stats_habits_keyboard() -> InlineKeyboardMarkup:
         ),
     )
     kb.row(
-        InlineKeyboardButton(text="Закрыть", callback_data="clear_menu"),
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
     )
 
     return kb
@@ -52,5 +55,12 @@ def stats_habits_list_keyboard(habit_statistic: list[dict]) -> InlineKeyboardMar
                 callback_data=f"stats_habit_id_{i_habit["id"]}",
             ),
         )
+
+    kb.row(
+        InlineKeyboardButton(
+            text="Закрыть",
+            callback_data="clear_keyboard",
+        ),
+    )
 
     return kb
