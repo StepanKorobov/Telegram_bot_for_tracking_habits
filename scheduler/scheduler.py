@@ -28,7 +28,7 @@ def send_notifications():
             select(Users.telegram_id, Habits.habit_name)
             .join(Habits, Habits.user_id == Users.id)
             .join(HabitTracking, HabitTracking.habits_id == Habits.id)
-            .where(HabitTracking.alert_time == current_time)
+            .where(HabitTracking.alert_time == current_time, HabitTracking.count < 21)
         )
         rows = session.execute(statement).all()
 
