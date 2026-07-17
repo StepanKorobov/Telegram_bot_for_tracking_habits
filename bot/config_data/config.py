@@ -4,6 +4,12 @@ import os
 
 from dotenv import find_dotenv, load_dotenv
 
+from logging_config import setup_logging
+import logging
+setup_logging()
+logger = logging.getLogger(__name__)
+logger.info("Service started")
+
 if not find_dotenv():
     exit("Переменные окружения не загружены т.к отсутствует файл .env")
 else:
