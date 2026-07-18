@@ -1,3 +1,4 @@
+import logging
 from functools import wraps
 from typing import Any, Callable
 
@@ -6,6 +7,8 @@ from bot.database.models import get_user_by_telegram_id, update_user_tokens
 from config_data.config import API_URL
 from requests import post
 from requests.models import Response
+
+logger = logging.getLogger(__name__)
 
 
 class ExpiredTokenError(Exception):
@@ -42,9 +45,34 @@ def registration_user(telegram_id: int, username: str, password: str) -> bool | 
         "username": username,
         "password": password,
     }
+    logger.info(
+        "registration_user request, telegram_id=%s, username=%r",
+        telegram_id,
+        username,
+    )
+
     response: Response = post(f"{API_URL}/api/auth/login", json=json_data)
+    logger.debug(
+        "registration_user response, telegram_id=%s, status=%s",
+        telegram_id,
+        response.status_code,
+    )
+
     if response.status_code == 200:
+        logger.info(
+            "registration_user success, telegram_id=%s, username=%r",
+            telegram_id,
+            username,
+        )
         return True
+
+    logger.warning(
+        "registration_user failed, telegram_id=%s, username=%r, status=%s, error_message=%r",
+        telegram_id,
+        username,
+        response.status_code,
+        response.text,
+    )
     return None
 
 
@@ -65,9 +93,31 @@ def get_token(username: str, password: str) -> dict[str, str] | None:
         "username": username,
         "password": password,
     }
+    logger.info(
+        "get_token request, username=%r",
+        username,
+    )
+
     response: Response = post(f"{API_URL}/api/auth/token", data=form_data)
+    logger.debug(
+        "get_token response, username=%r, status=%s",
+        username,
+        response.status_code,
+    )
+
     if response.status_code == 200:
+        logger.info(
+            "get_token success, username=%r",
+            username,
+        )
         return response.json()
+
+    logger.warning(
+        "get_token failed, username=%r, status=%s, error_message=%r",
+        username,
+        response.status_code,
+        response.text,
+    )
     return None
 
 
@@ -83,12 +133,26 @@ def refresh_token(token: str) -> dict[str, str] | None:
         None в случае неуспешного запроса.
     """
 
+    logger.info("refresh_token request")
+
     json_data: dict[str, str] = {
         "refresh_token": token,
     }
     response: Response = post(f"{API_URL}/api/auth/refresh_token", json=json_data)
+    logger.debug(
+        "refresh_token response, status=%s",
+        response.status_code,
+    )
+
     if response.status_code == 200:
+        logger.info("refresh_token success")
         return response.json()
+
+    logger.warning(
+        "refresh_token failed, status=%s, error_message=%r",
+        response.status_code,
+        response.text,
+    )
     return None
 
 
@@ -129,19 +193,51 @@ def refresh_token_decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             user: User = kwargs.get("user")
 
             if not user:
+                logger.error(
+                    "refresh_token_decorator: missing 'user' argument for func=%s",
+                    func.__name__,
+                )
                 raise ValueError("user argument is required")
+
+            logger.warning(
+                "ExpiredTokenError caught, attempting refresh, telegram_id=%s",
+                user.telegram_id,
+            )
 
             api_token_refresh: str = user.to_json().get("api_token_refresh")
             tokens: dict[str, str] = refresh_token(token=api_token_refresh)
+
+            if not tokens:
+                logger.error(
+                    "refresh_token_decorator: refresh_token() returned None, telegram_id=%s",
+                    user.telegram_id,
+                )
+                raise TokenRefreshFailed(user=user)
+
             update_user_tokens(telegram_id=user.telegram_id, token_data=tokens)
+            logger.info(
+                "refresh_token_decorator: user tokens updated, telegram_id=%s",
+                user.telegram_id,
+            )
+
             user: User = get_user_by_telegram_id(telegram_id=user.telegram_id)
             kwargs["user"] = user
 
             try:
                 result = func(*args, **kwargs)
             except ExpiredTokenError as exc:
+                logger.error(
+                    "refresh_token_decorator: token expired again after refresh, telegram_id=%s, error_message=%r",
+                    user.telegram_id,
+                    exc,
+                )
                 raise TokenRefreshFailed(user=user)
             else:
+                logger.info(
+                    "refresh_token_decorator: retried func=%s successfully, telegram_id=%s",
+                    func.__name__,
+                    user.telegram_id,
+                )
                 return result
         else:
             return result
