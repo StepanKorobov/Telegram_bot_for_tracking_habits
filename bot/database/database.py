@@ -1,7 +1,10 @@
+import logging
 from contextlib import contextmanager
 
 from sqlalchemy import BigInteger, Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+
+logger = logging.getLogger(__name__)
 
 engine = create_engine("sqlite:///database.db")
 Session = sessionmaker(bind=engine)
@@ -14,12 +17,17 @@ Session = sessionmaker(bind=engine)
 def get_session():
     """Контекстный менеджер для получения сессии"""
     session = Session()
+    logger.debug("DB session created: %r", session)
+
     try:
         yield session
-    except Exception:
+        logger.debug("DB session scope completed successfully: %r", session)
+    except Exception as exc:
+        logger.exception("DB session error, rolling back: %r, exc=%r", session, exc)
         session.rollback()
     finally:
         session.close()
+        logger.debug("DB session closed: %r", session)
 
 
 class Base(DeclarativeBase):
