@@ -1,4 +1,8 @@
+import logging
+
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+logger = logging.getLogger(__name__)
 
 
 def stats_habits_keyboard() -> InlineKeyboardMarkup:
@@ -11,6 +15,8 @@ def stats_habits_keyboard() -> InlineKeyboardMarkup:
     Returns:
         Клавиатура с привычками.
     """
+
+    logger.debug("stats_habits_keyboard: building main stats keyboard")
 
     kb = InlineKeyboardMarkup()
 
@@ -33,6 +39,10 @@ def stats_habits_keyboard() -> InlineKeyboardMarkup:
         ),
     )
 
+    logger.debug(
+        "stats_habits_keyboard: buttons created (one, all, clear)",
+    )
+
     return kb
 
 
@@ -47,13 +57,23 @@ def stats_habits_list_keyboard(habit_statistic: list[dict]) -> InlineKeyboardMar
         Клавиатура с привычками.
     """
 
+    logger.debug(
+        "stats_habits_list_keyboard: building habit list keyboard, habits_count=%s",
+        len(habit_statistic),
+    )
+
     kb = InlineKeyboardMarkup()
-    for i_habit in habit_statistic:
+    for habit in habit_statistic:
         kb.row(
             InlineKeyboardButton(
-                text=f"{i_habit["habit_name"]}",
-                callback_data=f"stats_habit_id_{i_habit["id"]}",
+                text=f"{habit["habit_name"]}",
+                callback_data=f"stats_habit_id_{habit["id"]}",
             ),
+        )
+        logger.debug(
+            "stats_habits_list_keyboard: added button habit_id=%s, name=%r",
+            habit["id"],
+            habit["habit_name"],
         )
 
     kb.row(
@@ -62,5 +82,7 @@ def stats_habits_list_keyboard(habit_statistic: list[dict]) -> InlineKeyboardMar
             callback_data="clear_keyboard",
         ),
     )
+
+    logger.debug("stats_habits_list_keyboard: added close button")
 
     return kb

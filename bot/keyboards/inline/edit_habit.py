@@ -1,4 +1,8 @@
+import logging
+
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+logger = logging.getLogger(__name__)
 
 
 def edit_habits_keyboard(habits_list: list[dict]) -> InlineKeyboardMarkup:
@@ -12,6 +16,11 @@ def edit_habits_keyboard(habits_list: list[dict]) -> InlineKeyboardMarkup:
         Клавиатура с привычками.
     """
 
+    logger.debug(
+        "edit_habits_keyboard: building keyboard, habits_count=%s",
+        len(habits_list),
+    )
+
     kb = InlineKeyboardMarkup()
     for habit_id, habit in enumerate(habits_list):
         kb.row(
@@ -20,6 +29,13 @@ def edit_habits_keyboard(habits_list: list[dict]) -> InlineKeyboardMarkup:
                 callback_data=f"habit_id_{habit["id"]}_{habit["name"]}",
             )
         )
+        logger.debug(
+            "edit_habits_keyboard: added button idx=%s, habit_id=%s, name=%r",
+            habit_id,
+            habit["id"],
+            habit["name"],
+        )
+
     kb.row(
         InlineKeyboardButton(
             text="Удалить все привычки",
@@ -30,6 +46,7 @@ def edit_habits_keyboard(habits_list: list[dict]) -> InlineKeyboardMarkup:
             callback_data="clear_keyboard",
         ),
     )
+    logger.debug("edit_habits_keyboard: added control buttons (delete_all, clear)")
 
     return kb
 
@@ -44,6 +61,11 @@ def edit_hobit_id_keyboard(habit_id: int) -> InlineKeyboardMarkup:
     Returns:
         Клавиатура с выбором действия у привычки
     """
+
+    logger.debug(
+        "edit_hobit_id_keyboard: building keyboard for habit_id=%s",
+        habit_id,
+    )
 
     kb = InlineKeyboardMarkup()
     kb.row(
@@ -63,6 +85,11 @@ def edit_hobit_id_keyboard(habit_id: int) -> InlineKeyboardMarkup:
         ),
     )
 
+    logger.debug(
+        "edit_hobit_id_keyboard: buttons created for habit_id=%s",
+        habit_id,
+    )
+
     return kb
 
 
@@ -76,6 +103,11 @@ def edit_hobit_id_choice_keyboard(habit_id: int) -> InlineKeyboardMarkup:
     Returns:
         Клавиатура с выбором действия
     """
+
+    logger.debug(
+        "edit_hobit_id_choice_keyboard: building keyboard for habit_id=%s",
+        habit_id,
+    )
 
     kb = InlineKeyboardMarkup()
     kb.row(
@@ -109,6 +141,11 @@ def edit_hobit_id_choice_keyboard(habit_id: int) -> InlineKeyboardMarkup:
             text="Закрыть",
             callback_data="clear_keyboard",
         ),
+    )
+
+    logger.debug(
+        "edit_hobit_id_choice_keyboard: buttons created for habit_id=%s",
+        habit_id,
     )
 
     return kb

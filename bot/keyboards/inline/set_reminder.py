@@ -1,4 +1,8 @@
+import logging
+
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+logger = logging.getLogger(__name__)
 
 
 def set_reminder_keyboard(habits: list[dict]) -> InlineKeyboardMarkup:
@@ -13,14 +17,34 @@ def set_reminder_keyboard(habits: list[dict]) -> InlineKeyboardMarkup:
         Клавиатура с привычками.
     """
 
+    logger.debug(
+        "set_reminder_keyboard: building keyboard, habits_count=%s",
+        len(habits),
+    )
+
     kb = InlineKeyboardMarkup()
 
-    for i_habit in habits:
+    for habit in habits:
+        name: str = habit["habit_name"]
+        alert_time: str = habit["habit_tracking"]["alert_time"]
+        text: str = (
+            f"*{name}* - {alert_time}"
+            if alert_time
+            else f"*{name}* - Напоминание не установлено"
+        )
+
         kb.row(
             InlineKeyboardButton(
-                text=f"*{i_habit["habit_name"]}* - {i_habit["habit_tracking"]["alert_time"] if i_habit["habit_tracking"]["alert_time"] else "Напоминание не установлено"}",
-                callback_data=f"habit_reminder_id_{i_habit["id"]}",
+                text=text,
+                callback_data=f"habit_reminder_id_{habit['id']}",
             ),
+        )
+
+        logger.debug(
+            "set_reminder_keyboard: added button habit_id=%s, name=%r, alert_time=%r",
+            habit["id"],
+            name,
+            alert_time,
         )
 
     kb.row(
@@ -29,6 +53,8 @@ def set_reminder_keyboard(habits: list[dict]) -> InlineKeyboardMarkup:
             callback_data="clear_keyboard",
         ),
     )
+
+    logger.debug("set_reminder_keyboard: added close button")
 
     return kb
 
@@ -43,6 +69,8 @@ def set_reminder_hour_keyboard() -> InlineKeyboardMarkup:
     Returns:
         Клавиатура с выбором часа.
     """
+
+    logger.debug("set_reminder_hour_keyboard: building hour keyboard")
 
     kb = InlineKeyboardMarkup()
 
@@ -65,12 +93,23 @@ def set_reminder_hour_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"habit_reminder_hour_{i_hour + 3}",
             ),
         )
+
+        logger.debug(
+            "set_reminder_hour_keyboard: added row [%s, %s, %s, %s]",
+            i_hour,
+            i_hour + 1,
+            i_hour + 2,
+            i_hour + 3,
+        )
+
     kb.row(
         InlineKeyboardButton(
             text="Закрыть",
             callback_data="clear_keyboard",
         ),
     )
+
+    logger.debug("set_reminder_hour_keyboard: added close button")
 
     return kb
 
@@ -86,6 +125,8 @@ def set_reminder_minute_keyboard() -> InlineKeyboardMarkup:
     Returns:
         Клавиатура с выбором минут.
     """
+
+    logger.debug("set_reminder_minute_keyboard: building minute keyboard")
 
     kb = InlineKeyboardMarkup()
 
@@ -104,11 +145,21 @@ def set_reminder_minute_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"habit_reminder_minute_{i_minute + 10}",
             ),
         )
+
+        logger.debug(
+            "set_reminder_minute_keyboard: added row [%s, %s, %s]",
+            i_minute,
+            i_minute + 5,
+            i_minute + 10,
+        )
+
     kb.row(
         InlineKeyboardButton(
             text="Закрыть",
             callback_data="clear_keyboard",
         ),
     )
+
+    logger.debug("set_reminder_minute_keyboard: added close button")
 
     return kb
