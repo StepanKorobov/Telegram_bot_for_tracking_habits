@@ -1,7 +1,5 @@
-from telebot.types import Message
-
 from loader import bot
-
+from telebot.types import Message
 
 # Эхо хендлер, куда летят текстовые сообщения без указанного состояния
 # @bot.message_handler(state=None)

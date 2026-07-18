@@ -1,3 +1,4 @@
+import logging
 from datetime import date, timedelta
 
 from api.habit_client import add_habit_api
@@ -11,6 +12,8 @@ from utils.user_decorator import (
     get_current_user_from_inline_button,
     with_current_user,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @bot.message_handler(commands=["add_habit"])
@@ -28,6 +31,12 @@ def add_hobbit(message: Message) -> None:
 
     user_id: int = message.from_user.id
     chat_id: int = message.chat.id
+
+    logger.info(
+        "command: /add_habit, user_id=%s, chat_id=%s",
+        user_id,
+        chat_id,
+    )
 
     bot.set_state(
         user_id=user_id,
@@ -53,7 +62,24 @@ def process_habit_name(message: Message) -> None:
     chat_id: int = message.chat.id
     habit_name: str = message.text
 
+    logger.debug(
+        "add habit name, user_id=%s, chat_id=%s, habit_name=%r",
+        user_id,
+        chat_id,
+        habit_name,
+    )
+    logger.info(
+        "step=add_habit_name, user_id=%s, chat_id=%s",
+        user_id,
+        chat_id,
+    )
+
     if len(habit_name) <= 50:
+        logger.info(
+            "habit name accepted, user_id=%s, chat_id=%s",
+            user_id,
+            chat_id,
+        )
         bot.send_message(
             chat_id=chat_id,
             text="Введите описание новой привычки:",
@@ -67,6 +93,12 @@ def process_habit_name(message: Message) -> None:
         with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
             data["name"] = habit_name
     else:
+        logger.warning(
+            "habit name too long, user_id=%s, chat_id=%s, len_name=%d",
+            user_id,
+            chat_id,
+            len(habit_name),
+        )
         bot.send_message(
             chat_id=chat_id,
             text="Название может содержать не более 50 символов.",
@@ -89,7 +121,24 @@ def process_habit_description(message: Message) -> None:
     chat_id: int = message.chat.id
     hobbit_description = message.text
 
+    logger.debug(
+        "add habit description, user_id=%s, chat_id=%s, description=%r",
+        user_id,
+        chat_id,
+        hobbit_description,
+    )
+    logger.info(
+        "step=add_habit description, user_id=%s, chat_id=%s",
+        user_id,
+        chat_id,
+    )
+
     if len(hobbit_description) <= 250:
+        logger.info(
+            "habit description accepted, user_id=%s, chat_id=%s",
+            user_id,
+            chat_id,
+        )
         bot.send_message(
             chat_id=chat_id,
             text="Введите цель новой привычки:",
@@ -103,6 +152,12 @@ def process_habit_description(message: Message) -> None:
         with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
             data["description"] = message.text
     else:
+        logger.warning(
+            "habit description too long, user_id=%s, chat_id=%s, len_description=%d",
+            user_id,
+            chat_id,
+            len(hobbit_description),
+        )
         bot.send_message(
             chat_id=chat_id,
             text="Описание может содержать не более 250 символов.",
@@ -125,7 +180,25 @@ def process_habit_goal(message: Message) -> None:
     chat_id: int = message.chat.id
     habit_goal: str = message.text
 
+    logger.debug(
+        "add habit goal, user_id=%s, chat_id=%s, goal=%r",
+        user_id,
+        chat_id,
+        habit_goal,
+    )
+    logger.info(
+        "step=add_habit goal, user_id=%s, chat_id=%s",
+        user_id,
+        chat_id,
+    )
+
     if len(habit_goal) <= 50:
+        logger.info(
+            "habit goal accepted, user_id=%s, chat_id=%s",
+            user_id,
+            chat_id,
+        )
+
         current_min_date: date = date.today() + timedelta(days=21)
         max_date: date = date.today() + timedelta(days=21 * 3)
         calendar, step = WMonthTelegramCalendar(
@@ -149,6 +222,12 @@ def process_habit_goal(message: Message) -> None:
         with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
             data["goal"] = message.text
     else:
+        logger.warning(
+            "habit goal too long, user_id=%s, chat_id=%s, len_goal=%d",
+            user_id,
+            chat_id,
+            len(habit_goal),
+        )
         bot.send_message(
             chat_id=chat_id,
             text="Цель может содержать не более 50 символов.",
@@ -182,6 +261,20 @@ def cal(call: CallbackQuery, current_user: User) -> None:
         max_date=max_date,
     ).process(call.data)
 
+    logger.debug(
+        "add habit terms, user_id=%s, chat_id=%s, goal=%r, current_min_date=%r, max_date=%r",
+        user_id,
+        chat_id,
+        message_id,
+        current_min_date,
+        max_date,
+    )
+    logger.info(
+        "step=add_habit terms, user_id=%s, chat_id=%s",
+        user_id,
+        chat_id,
+    )
+
     if not result and key:
         bot.edit_message_text(
             chat_id=chat_id,
@@ -201,11 +294,29 @@ def cal(call: CallbackQuery, current_user: User) -> None:
 
         result: bool = add_habit_api(user=current_user, habit_data=data)
         if result:
+            logger.info(
+                "habit added successfully, user_id=%s, chat_id=%s, name=%r, description=%r, goal=%r, terms=%s",
+                user_id,
+                chat_id,
+                data.get("name"),
+                data.get("description"),
+                data.get("goal"),
+                data.get("terms"),
+            )
             bot.send_message(
                 chat_id=chat_id,
                 text="Новая привычка успешно добавлена!",
             )
         else:
+            logger.error(
+                "failed to add habit via API, user_id=%s, chat_id=%s, name=%r, description=%r, goal=%r, terms=%s",
+                user_id,
+                chat_id,
+                data.get("name"),
+                data.get("description"),
+                data.get("goal"),
+                data.get("terms"),
+            )
             bot.send_message(
                 chat_id=chat_id,
                 text="Не удалось добавить привычку.",
@@ -229,7 +340,17 @@ def process_habit_terms(message: Message):
         None
     """
 
+    chat_id: int = message.chat.id
+    user_id: int = message.from_user.id
+    user_text: str = message.text
+
+    logger.warning(
+        "Entering a date into a chat instead of selecting it from a menu, user_id=%s, chat_id=%s, user_text=%r",
+        user_id,
+        chat_id,
+        user_text,
+    )
     bot.send_message(
-        chat_id=message.chat.id,
+        chat_id=chat_id,
         text="Ошибка: Необходимо выбрать дату в меню выше.",
     )

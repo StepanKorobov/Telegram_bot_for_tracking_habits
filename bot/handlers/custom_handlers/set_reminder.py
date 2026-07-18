@@ -1,15 +1,18 @@
-from api.track_habit_client import track_habit_get_all_api, track_habit_set_alert_time
-from loader import bot
-from states.set_reminder import ReminderState
-from telebot.types import CallbackQuery, Message
-from utils.user_decorator import get_current_user_from_inline_button, with_current_user
+import logging
 
+from api.track_habit_client import track_habit_get_all_api, track_habit_set_alert_time
 from bot.database.database import User
 from bot.keyboards.inline.set_reminder import (
     set_reminder_hour_keyboard,
     set_reminder_keyboard,
     set_reminder_minute_keyboard,
 )
+from loader import bot
+from states.set_reminder import ReminderState
+from telebot.types import CallbackQuery, Message
+from utils.user_decorator import get_current_user_from_inline_button, with_current_user
+
+logger = logging.getLogger(__name__)
 
 
 @bot.message_handler(commands=["set_reminder"])
@@ -30,12 +33,24 @@ def set_reminder_habit(message: Message, current_user: User) -> None:
     user_id: int = message.from_user.id
     chat_id: int = message.chat.id
 
+    logger.info(
+        "command /set_reminder, user_id=%s, chat_id=%s",
+        user_id,
+        chat_id,
+    )
+
     bot.set_state(
         user_id=user_id,
         state=ReminderState.reminder,
         chat_id=chat_id,
     )
     result = track_habit_get_all_api(user=current_user)
+    logger.debug(
+        "track habits loaded for reminder, user_id=%s, habits_count=%s",
+        user_id,
+        len(result) if result else 0,
+    )
+
     bot.send_message(
         chat_id=chat_id,
         text="Установить напоминание о привычках:",
@@ -63,6 +78,21 @@ def set_reminder_change_habit(call: CallbackQuery) -> None:
     chat_id: int = call.message.chat.id
     message_id: int = call.message.message_id
     habit_id = int(call.data.split("_")[3])
+
+    logger.info(
+        "reminder habit selected, user_id=%s, chat_id=%s, habit_id=%s",
+        user_id,
+        chat_id,
+        habit_id,
+    )
+    logger.debug(
+        "reminder habit callback data=%r, user_id=%s, chat_id=%s, habit_id=%s, message_id=%s",
+        call.data,
+        user_id,
+        chat_id,
+        habit_id,
+        message_id,
+    )
 
     bot.set_state(
         user_id=user_id,
@@ -102,6 +132,13 @@ def set_reminder_change_hour(call: CallbackQuery) -> None:
     message_id: int = call.message.message_id
     hour: int = int(call.data.split("_")[3])
 
+    logger.info(
+        "reminder hour selected, user_id=%s, chat_id=%s, hour=%s",
+        user_id,
+        chat_id,
+        hour,
+    )
+
     bot.set_state(
         user_id=user_id,
         state=ReminderState.minute_change,
@@ -140,7 +177,14 @@ def set_reminder_change_minute(call: CallbackQuery, current_user: User) -> None:
     user_id: int = call.from_user.id
     chat_id: int = call.message.chat.id
     message_id: int = call.message.message_id
-    minute = int(call.data.split("_")[3])
+    minute: int = int(call.data.split("_")[3])
+
+    logger.info(
+        "reminder minute selected (inline), user_id=%s, chat_id=%s, minute=%s",
+        user_id,
+        chat_id,
+        minute,
+    )
 
     with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
         data["minute"] = minute
@@ -148,14 +192,37 @@ def set_reminder_change_minute(call: CallbackQuery, current_user: User) -> None:
         minute = (
             data.get("minute") if data.get("minute") > 9 else f"0{data.get("minute")}"
         )
+        habit_id = data["habit_id"]
+
+    logger.debug(
+        "reminder time prepared, user_id=%s, habit_id=%s, hour=%s, minute=%s",
+        user_id,
+        habit_id,
+        hour,
+        minute,
+    )
 
     result = track_habit_set_alert_time(
-        user=current_user, habit_id=data["habit_id"], hour=hour, minute=minute
+        user=current_user, habit_id=habit_id, hour=hour, minute=minute
     )
 
     if result:
+        logger.info(
+            "reminder set successfully, user_id=%s, habit_id=%s, time=%s:%s",
+            user_id,
+            habit_id,
+            hour,
+            minute,
+        )
         text = f"Для привычки установлено время напоминания {hour}:{minute}"
     else:
+        logger.error(
+            "failed to set reminder, user_id=%s, habit_id=%s, time=%s:%s",
+            user_id,
+            habit_id,
+            hour,
+            minute,
+        )
         text = "Не удалось установить время напоминания"
 
     bot.edit_message_text(
@@ -190,23 +257,56 @@ def set_reminder_change_minute(message: Message, current_user: User) -> None:
     chat_id: int = message.chat.id
     minute: str | int = message.text
 
+    logger.debug(
+        "reminder minute input text, user_id=%s, chat_id=%s, text=%r",
+        user_id,
+        chat_id,
+        minute,
+    )
+
     if minute.isdigit():
         minute = int(minute)
         if 0 <= minute < 50:
             with bot.retrieve_data(user_id=user_id, chat_id=chat_id) as data:
                 data["minute"] = minute
-                hour = data.get("hour") if data.get("hour") > 9 else f"0{data.get("hour")}"
-                minute = (
-                    data.get("minute") if data.get("minute") > 9 else f"0{data.get("minute")}"
+                hour = (
+                    data.get("hour") if data.get("hour") > 9 else f"0{data.get("hour")}"
                 )
+                minute = (
+                    data.get("minute")
+                    if data.get("minute") > 9
+                    else f"0{data.get("minute")}"
+                )
+                habit_id = data.get("habit_id")
 
+            logger.debug(
+                "reminder time prepared (manual), user_id=%s, habit_id=%s, hour=%s, minute=%s",
+                user_id,
+                habit_id,
+                hour,
+                minute,
+            )
             result = track_habit_set_alert_time(
                 user=current_user, habit_id=data["habit_id"], hour=hour, minute=minute
             )
 
             if result:
+                logger.info(
+                    "reminder set successfully (manual), user_id=%s, habit_id=%s, time=%s:%s",
+                    user_id,
+                    habit_id,
+                    hour,
+                    minute,
+                )
                 text = f"Для привычки установлено время напоминания {hour}:{minute}"
             else:
+                logger.error(
+                    "failed to set reminder (manual), user_id=%s, habit_id=%s, time=%s:%s",
+                    user_id,
+                    habit_id,
+                    hour,
+                    minute,
+                )
                 text = "Не удалось установить время напоминания"
 
             bot.send_message(
@@ -219,12 +319,21 @@ def set_reminder_change_minute(message: Message, current_user: User) -> None:
                 chat_id=chat_id,
             )
         else:
+            logger.warning(
+                "invalid minute range, user_id=%s, chat_id=%s, minute=%s",
+                user_id,
+                chat_id,
+                minute,
+            )
             bot.send_message(
                 chat_id=chat_id,
-                text="Ошибка: необходимо ввести минуты в диапазоне от 0 до 59."
+                text="Ошибка: необходимо ввести минуты в диапазоне от 0 до 59.",
             )
     else:
-        bot.send_message(
-            chat_id=chat_id,
-            text="Ошибка: Ожидалось число, без символов."
+        logger.warning(
+            "non-digit minute input, user_id=%s, chat_id=%s, text=%r",
+            user_id,
+            chat_id,
+            minute,
         )
+        bot.send_message(chat_id=chat_id, text="Ошибка: Ожидалось число, без символов.")
