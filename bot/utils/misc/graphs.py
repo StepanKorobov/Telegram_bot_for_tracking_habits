@@ -1,9 +1,12 @@
+import logging
 import random
 from datetime import date, datetime, timedelta
 from io import BytesIO
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__name__)
 
 
 def get_date_range(habits_data) -> tuple[date, date, list[datetime]]:
@@ -17,6 +20,11 @@ def get_date_range(habits_data) -> tuple[date, date, list[datetime]]:
         Картеж с минимальной, максимальной датой и списком дат.
     """
 
+    logger.debug(
+        "get_date_range: computing date range, habits_count=%s",
+        len(habits_data),
+    )
+
     all_dates: list = []
     for habit in habits_data:
         for check in habit["habit_tracking_statistics"]:
@@ -24,12 +32,14 @@ def get_date_range(habits_data) -> tuple[date, date, list[datetime]]:
             dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
             all_dates.append(dt)
 
-    # сортируем
-    date_sort: list = (
-        list(map(lambda x: x.date(), sorted(all_dates)))
-        if all_dates
-        else [datetime.now()]
-    )
+    if all_dates:
+        date_sort: list = list(map(lambda x: x.date(), sorted(all_dates)))
+    else:
+        logger.warning(
+            "get_date_range: no completion dates found, using current date fallback",
+        )
+        date_sort = [datetime.now()]
+
     min_date: datetime = (
         date_sort[0] - timedelta(days=1)
         if all_dates
@@ -47,6 +57,12 @@ def get_date_range(habits_data) -> tuple[date, date, list[datetime]]:
         current_date += timedelta(days=1)
         date_ticks.append(current_date)
 
+    logger.debug(
+        "get_date_range: min_date=%s, max_date=%s, ticks_count=%s",
+        min_date,
+        max_date,
+        len(date_ticks),
+    )
     return min_date, max_date, date_ticks
 
 
@@ -65,8 +81,19 @@ def get_graphs_habits(data: list) -> BytesIO:
     habits = data
     n_habits = len(habits)
 
+    logger.info(
+        "get_graphs_habits: building graphs, habits_count=%s",
+        n_habits,
+    )
+
     # записываем все даты
     min_date, max_date, date_ticks = get_date_range(habits_data=habits)
+    logger.debug(
+        "get_graphs_habits: date_range min=%s, max=%s, ticks=%s",
+        min_date,
+        max_date,
+        len(date_ticks),
+    )
 
     # Создаем график в памяти
     fig, axes = plt.subplots(nrows=n_habits, ncols=1, figsize=(14, 4 * n_habits))
@@ -76,12 +103,22 @@ def get_graphs_habits(data: list) -> BytesIO:
 
     # генерируем цвета для точек на графике
     colors: list[str] = [f"#{random.randint(0, 0xFFFFFF):06X}" for _ in range(n_habits)]
+    logger.debug(
+        "get_graphs_habits: generated colors count=%s",
+        len(colors),
+    )
 
     for idx, habit in enumerate(habits):
         habit_name: str = habit["habit_name"]
         check_dates: str = habit["habit_tracking_statistics"]
-
         ax = axes[idx]
+
+        logger.debug(
+            "get_graphs_habits: plotting habit idx=%s, name=%r, checks_count=%s",
+            idx,
+            habit_name,
+            len(check_dates),
+        )
 
         if len(check_dates) > 0:
             dates = []
@@ -100,6 +137,14 @@ def get_graphs_habits(data: list) -> BytesIO:
             datetime_sorted: list = sorted(dates)
             times_sorted: list = [times[dates.index(d)] for d in datetime_sorted]
             dates_sorted: list = [d.date() for d in datetime_sorted]
+
+            logger.debug(
+                "get_graphs_habits: habit=%r, points=%s, first_date=%s, last_date=%s",
+                habit_name,
+                len(dates_sorted),
+                dates_sorted[0],
+                dates_sorted[-1],
+            )
 
             ax.scatter(
                 dates_sorted,
@@ -160,6 +205,11 @@ def get_graphs_habits(data: list) -> BytesIO:
             # Улучшаем читаемость дат — поворачиваем текст
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right")
         else:
+            logger.info(
+                "get_graphs_habits: habit=%r has no completions",
+                habit_name,
+            )
+
             ax.text(
                 0.5,
                 0.5,
@@ -192,5 +242,10 @@ def get_graphs_habits(data: list) -> BytesIO:
     )
     img_buffer.seek(0)  # Возвращаем курсор в начало
     plt.close()  # Закрываем график
+
+    logger.info(
+        "get_graphs_habits: graph built successfully, habits_count=%s",
+        n_habits,
+    )
 
     return img_buffer
