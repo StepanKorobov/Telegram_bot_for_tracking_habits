@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -25,6 +26,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # Время жизни токена для обновления jwt
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+logger = logging.getLogger(__name__)
 
 # Контекст для шифрования, мы будем шифровать пароли
 # pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -80,12 +83,33 @@ async def authenticate_user(
         Модель пользователя Users, либо False в случе если пользователь не найден или пароль не верный
     """
 
+    logger.info(
+        "authenticate_user: login attempt, username=%r",
+        username,
+    )
+
     user: Users = await get_user(session=session, username=username)
 
     if not user:
+        logger.warning(
+            "authenticate_user: user not found, username=%r",
+            username,
+        )
         return False
     if not verify_password(password, user.password):
+        logger.warning(
+            "authenticate_user: invalid password, username=%r, user_id=%s",
+            username,
+            user.id,
+        )
         return False
+
+    logger.info(
+        "authenticate_user: login successful, user_id=%s, username=%r, telegram_id=%s",
+        user.id,
+        user.username,
+        user.telegram_id,
+    )
 
     return user
 
@@ -110,6 +134,8 @@ async def get_current_user(
         HTTPException: 401, если токен невалидный, либо некорректный тип токена
     """
 
+    logger.debug("get_current_user: token received")
+
     # Исключение, если не удалось проверить данные, jwt токен
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -119,26 +145,54 @@ async def get_current_user(
     try:
         # Декодируем jwt токен
         payload: dict = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("type") != "access":
+        token_type = payload.get("type")
+        if token_type != "access":
+            logger.warning(
+                "get_current_user: invalid token type, expected='access', got=%r",
+                token_type,
+            )
             return InvalidSignatureError
 
         username: str = payload.get("sub")
         if username is None:
+            logger.warning("get_current_user: token has no subject (sub)")
             raise credentials_exception
+
         token_data = TokenData(username=username)
 
+        logger.debug(
+            "get_current_user: decoded token, username=%r",
+            token_data.username,
+        )
+
     except InvalidSignatureError:
+        logger.warning(
+            "get_current_user: InvalidSignatureError while decoding access token",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
         )
 
     except InvalidTokenError:
+        logger.warning(
+            "get_current_user: InvalidTokenError while decoding access token",
+        )
         raise credentials_exception
 
     user: Users = await get_user(session=session, username=token_data.username)
 
     if user is None:
+        logger.warning(
+            "get_current_user: user not found for username=%r",
+            token_data.username,
+        )
         raise credentials_exception
+
+    logger.info(
+        "get_current_user: current user resolved, user_id=%s, username=%r",
+        user.id,
+        user.username,
+    )
 
     return user
 
@@ -168,7 +222,18 @@ async def get_current_active_user(
     """
 
     if not current_user.is_active:
+        logger.warning(
+            "get_current_active_user: inactive user, user_id=%s, username=%r",
+            current_user.id,
+            current_user.username,
+        )
         raise HTTPException(status_code=400, detail="Inactive user")
+
+    logger.debug(
+        "get_current_active_user: user is active, user_id=%s, username=%r",
+        current_user.id,
+        current_user.username,
+    )
 
     return current_user
 
@@ -196,6 +261,15 @@ def create_access_token(data: dict) -> str:
     to_encode.update({"exp": expire})
     encoded_jwt: str = jwt.encode(to_encode, ACCESS_SECRET_KEY, algorithm=ALGORITHM)
 
+    logger.debug(
+        "create_access_token: token created for sub=%r, telegram_id=%s, "
+        "type=%r, exp=%s",
+        data.get("sub"),
+        data.get("telegram_id"),
+        data.get("type"),
+        expire,
+    )
+
     return encoded_jwt
 
 
@@ -221,6 +295,8 @@ async def get_current_user_refresh(session: AsyncSession, refresh_token: str):
         InvalidTokenError: в случае невалидного токена.
     """
 
+    logger.debug("get_current_user_refresh: refresh token received")
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -231,26 +307,55 @@ async def get_current_user_refresh(session: AsyncSession, refresh_token: str):
         payload: dict = jwt.decode(
             refresh_token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM]
         )
-        if payload.get("type") != "refresh":
+        token_type = payload.get("type")
+        if token_type != "refresh":
+            logger.warning(
+                "get_current_user_refresh: invalid token type, expected='refresh', "
+                "got=%r",
+                token_type,
+            )
             return InvalidSignatureError
 
         username: str = payload.get("sub")
         if username is None:
+            logger.warning("get_current_user_refresh: token has no subject (sub)")
             raise credentials_exception
+
         token_data = TokenData(username=username)
+        logger.debug(
+            "get_current_user_refresh: decoded token, username=%r",
+            token_data.username,
+        )
 
     except InvalidSignatureError:
+        logger.warning(
+            "get_current_user_refresh: InvalidSignatureError while decoding refresh token",
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
         )
 
     except InvalidTokenError:
+        logger.warning(
+            "get_current_user_refresh: InvalidTokenError while decoding refresh token",
+        )
         raise credentials_exception
 
     user: Users = await get_user(session=session, username=token_data.username)
 
     if user is None:
+        logger.warning(
+            "get_current_user_refresh: user not found for username=%r",
+            token_data.username,
+        )
         raise credentials_exception
+
+    logger.info(
+        "get_current_user_refresh: current user resolved for refresh, "
+        "user_id=%s, username=%r",
+        user.id,
+        user.username,
+    )
 
     return user
 
@@ -277,5 +382,14 @@ def create_refresh_token(data: dict) -> str:
 
     to_encode.update({"exp": expire})
     encoded_jwt: str = jwt.encode(to_encode, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
+
+    logger.debug(
+        "create_refresh_token: token created for sub=%r, telegram_id=%s, "
+        "type=%r, exp=%s",
+        data.get("sub"),
+        data.get("telegram_id"),
+        data.get("type"),
+        expire,
+    )
 
     return encoded_jwt
