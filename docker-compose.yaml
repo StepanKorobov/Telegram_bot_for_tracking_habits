@@ -71,10 +71,13 @@ services:
     build:
       context: .
       dockerfile: DockerfileScheduler
+    volumes:
+      - ./logs/:/scheduler/logs/
     stop_signal: SIGTERM
     restart: always
     environment:
       - TZ=${APP_TIMEZONE}
+      - SERVICE_NAME=scheduler
     env_file:
       - .env
     networks:
