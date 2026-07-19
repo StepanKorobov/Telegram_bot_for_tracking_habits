@@ -18,4 +18,6 @@ COPY /scheduler /scheduler
 
 COPY /database/database.py /scheduler
 
+COPY /logging_config.py /scheduler
+
 CMD ["python", "main.py"]
