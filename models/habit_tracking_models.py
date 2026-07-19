@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Sequence
 
 from database.database import (
@@ -18,6 +19,8 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.sql.functions import user
 
+logger = logging.getLogger(__name__)
+
 
 async def get_habit_tracking_from_user(
     session: AsyncSession, user_id: int
@@ -33,6 +36,11 @@ async def get_habit_tracking_from_user(
         Список привычек (результат вызова to_json() для объекта Habits, так же в каждый объект вложен список из объектов HabitTracking).
     """
 
+    logger.debug(
+        "get_habit_tracking_from_user: querying habits for user_id=%s",
+        user_id,
+    )
+
     query = (
         select(Habits)
         .join(Habits.user)
@@ -42,6 +50,12 @@ async def get_habit_tracking_from_user(
 
     result = await session.execute(query)
     habits = result.scalars().all()
+
+    logger.info(
+        "get_habit_tracking_from_user: found %s habits for user_id=%s",
+        len(habits),
+        user_id,
+    )
 
     return habits
 
@@ -60,12 +74,32 @@ async def write_track_habits(session: AsyncSession, habit_id: int) -> None:
         None
     """
 
+    logger.info(
+        "write_track_habits: creating HabitTracking for habit_id=%s",
+        habit_id,
+    )
+
     habit_track = HabitTracking(
         count=0,
         habits_id=habit_id,
     )
     session.add(habit_track)
-    await session.commit()
+
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        await session.rollback()
+        logger.error(
+            "write_track_habits: IntegrityError for habit_id=%s, error=%r",
+            habit_id,
+            exc,
+        )
+        raise
+    else:
+        logger.info(
+            "write_track_habits: HabitTracking created for habit_id=%s",
+            habit_id,
+        )
 
 
 async def write_track_habits_statistic(
@@ -84,13 +118,38 @@ async def write_track_habits_statistic(
         None
     """
 
+    logger.debug(
+        "write_track_habits_statistic: inserting stat, user_id=%s, habit_id=%s, "
+        "completion_date=%s",
+        user_id,
+        habit_id,
+        date_time,
+    )
+
     habit_statistic = HabitTrackingStatistics(
         completion_date=date_time,
         user_id=user_id,
         habit_id=habit_id,
     )
     session.add(habit_statistic)
-    await session.commit()
+
+    try:
+        await session.commit()
+    except IntegrityError as exc:
+        logger.error(
+            "write_track_habits_statistic: IntegrityError, user_id=%s, habit_id=%s, "
+            "error=%r",
+            user_id,
+            habit_id,
+            exc,
+        )
+        raise
+    else:
+        logger.info(
+            "write_track_habits_statistic: stat saved, user_id=%s, habit_id=%s",
+            user_id,
+            habit_id,
+        )
 
 
 async def habits_track_check(
@@ -114,6 +173,12 @@ async def habits_track_check(
         HTTPException: 409, если привычка уже выполнялась сегодня.
     """
 
+    logger.info(
+        "habits_track_check: checking habit completion, user_id=%s, habit_id=%s",
+        user_id,
+        habit_id,
+    )
+
     query = (
         select(HabitTracking)
         .join(HabitTracking.habits)
@@ -123,9 +188,21 @@ async def habits_track_check(
     habit_tracking = result.scalars().one_or_none()
 
     if habit_tracking is None:
+        logger.warning(
+            "habits_track_check: HabitTracking not found for user_id=%s, habit_id=%s",
+            user_id,
+            habit_id,
+        )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     current_date_time = datetime.datetime.now()
+
+    logger.debug(
+        "habits_track_check: last_completion_date=%s, current_datetime=%s, count=%s",
+        habit_tracking.last_completion_date,
+        current_date_time,
+        habit_tracking.count,
+    )
 
     if habit_tracking.last_completion_date is None:
         habit_tracking.last_completion_date = current_date_time
@@ -137,10 +214,25 @@ async def habits_track_check(
             habit_id=habit_id,
             date_time=current_date_time,
         )
+
+        logger.info(
+            "habits_track_check: first completion recorded, user_id=%s, habit_id=%s, "
+            "count=%s",
+            user_id,
+            habit_id,
+            habit_tracking.count,
+        )
+
         return True
 
     current_date = datetime.datetime.date(current_date_time)
     habit_tracking_date = datetime.datetime.date(habit_tracking.last_completion_date)
+
+    logger.debug(
+        "habits_track_check: current_date=%s, last_date=%s",
+        current_date,
+        habit_tracking_date,
+    )
 
     if current_date > habit_tracking_date:
         habit_tracking.last_completion_date = current_date_time
@@ -152,8 +244,21 @@ async def habits_track_check(
             habit_id=habit_id,
             date_time=current_date_time,
         )
+
+        logger.info(
+            "habits_track_check: completion recorded, user_id=%s, habit_id=%s, "
+            "count=%s",
+            user_id,
+            habit_id,
+            habit_tracking.count,
+        )
         return True
     else:
+        logger.warning(
+            "habits_track_check: habit already completed today, user_id=%s, habit_id=%s",
+            user_id,
+            habit_id,
+        )
         raise HTTPException(
             status_code=409, detail="The habit has already been completed today"
         )
@@ -173,6 +278,11 @@ async def get_habit_track_statistic_all(
         None
     """
 
+    logger.debug(
+        "get_habit_track_statistic_all: querying stats for user_id=%s",
+        user_id,
+    )
+
     query = (
         select(Habits)
         .join(Habits.user)
@@ -182,6 +292,12 @@ async def get_habit_track_statistic_all(
 
     result = await session.execute(query)
     habits = result.scalars().all()
+
+    logger.info(
+        "get_habit_track_statistic_all: found %s habits with stats for user_id=%s",
+        len(habits),
+        user_id,
+    )
 
     return habits
 
@@ -201,6 +317,13 @@ async def get_habit_track_statistic_from_habit_id(
         None
     """
 
+    logger.debug(
+        "get_habit_track_statistic_from_habit_id: querying stats, user_id=%s, "
+        "habit_id=%s",
+        user_id,
+        habit_id,
+    )
+
     query = (
         select(Habits)
         .join(Habits.user)
@@ -208,9 +331,25 @@ async def get_habit_track_statistic_from_habit_id(
         .options(selectinload(Habits.habit_tracking_statistics))
     )
     result = await session.execute(query)
-    habits = result.scalars().one_or_none()
+    habit = result.scalars().one_or_none()
 
-    return habits
+    if habit:
+        logger.info(
+            "get_habit_track_statistic_from_habit_id: habit found, user_id=%s, "
+            "habit_id=%s, stats_count=%s",
+            user_id,
+            habit_id,
+            len(habit.habit_tracking_statistics),
+        )
+    else:
+        logger.warning(
+            "get_habit_track_statistic_from_habit_id: habit not found, user_id=%s, "
+            "habit_id=%s",
+            user_id,
+            habit_id,
+        )
+
+    return habit
 
 
 async def update_habit_track_alert_time(
@@ -232,6 +371,14 @@ async def update_habit_track_alert_time(
         HTTPException: 404, если привычка не найдена или не принадлежит пользователю.
     """
 
+    logger.info(
+        "update_habit_track_alert_time: updating alert_time, user_id=%s, habit_id=%s, "
+        "alert_time=%s",
+        user_id,
+        habit_id,
+        alert_time,
+    )
+
     subquery = (
         select(Habits.id)
         .where(Habits.id == habit_id, Habits.user_id == user_id)
@@ -246,8 +393,21 @@ async def update_habit_track_alert_time(
     try:
         await session.execute(query)
         await session.commit()
-    except IntegrityError:
+        logger.info(
+            "update_habit_track_alert_time: alert_time updated, user_id=%s, "
+            "habit_id=%s",
+            user_id,
+            habit_id,
+        )
+    except IntegrityError as exc:
         await session.rollback()
+        logger.error(
+            "update_habit_track_alert_time: IntegrityError, user_id=%s, "
+            "habit_id=%s, error=%r",
+            user_id,
+            habit_id,
+            exc,
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="The habit was not found or does not belong to the current user",
