@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated, Sequence
 
 from database.database import Habits, get_session
@@ -23,6 +24,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from routers.auth_router import get_current_active_user
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
@@ -42,12 +45,31 @@ async def habits_tracing(
     Доступ разрешён только авторизованным и активным пользователям.
     """
 
+    logger.info(
+        "habits_tracing: request, user_id=%s, username=%r",
+        current_user.id,
+        current_user.username,
+    )
+
     result: Sequence[Habits] = await get_habit_tracking_from_user(
         session=session, user_id=current_user.id
     )
 
+    logger.info(
+        "habits_tracing: response, user_id=%s, habits_count=%s",
+        current_user.id,
+        len(result),
+    )
+
     if result:
         return HabitsTrackingLitOut(habits=result)
+
+    # Явно залогировать случай, когда нет привычек
+    logger.debug(
+        "habits_tracing: no habits for user_id=%s",
+        current_user.id,
+    )
+    return HabitsTrackingLitOut(habits=[])
 
 
 @router.post(
@@ -67,13 +89,39 @@ async def habits_tracing_check(
     Доступ разрешён только авторизованным и активным пользователям.
     """
 
-    result: bool = await habits_track_check(
-        session=session, user_id=current_user.id, habit_id=habit_id.habit_id
+    logger.info(
+        "habits_tracing_check: request, user_id=%s, habit_id=%s",
+        current_user.id,
+        habit_id.habit_id,
     )
 
+    try:
+        result: bool = await habits_track_check(
+            session=session, user_id=current_user.id, habit_id=habit_id.habit_id
+        )
+    except HTTPException as exc:
+        logger.warning(
+            "habits_tracing_check: failed, user_id=%s, habit_id=%s, status=%s, detail=%r",
+            current_user.id,
+            habit_id.habit_id,
+            exc.status_code,
+            exc.detail,
+        )
+        raise
+
     if result:
+        logger.info(
+            "habits_tracing_check: success, user_id=%s, habit_id=%s",
+            current_user.id,
+            habit_id.habit_id,
+        )
         return StatusResponse(result="ok")
     else:
+        logger.error(
+            "habits_tracing_check: unexpected result=False, user_id=%s, habit_id=%s",
+            current_user.id,
+            habit_id.habit_id,
+        )
         raise HTTPException(
             status_code=404,
             detail="The habit was not found or does not belong to the current user",
@@ -83,7 +131,9 @@ async def habits_tracing_check(
 @router.post("/habits_tracking")
 async def create_habits_tracking():
     # Создать трекинг для привычки НЕАКТИВЕН
-    pass
+
+    logger.warning("create_habits_tracking: endpoint not implemented yet")
+    raise HTTPException(status_code=501, detail="Not implemented")
 
 
 @router.patch(
@@ -103,11 +153,36 @@ async def update_habits_tracking_alert_time(
     Доступ разрешён только авторизованным и активным пользователям.
     """
 
-    await update_habit_track_alert_time(
-        session=session,
-        user_id=current_user.id,
-        habit_id=alert_time.habit_id,
-        alert_time=alert_time.alert_time,
+    logger.info(
+        "update_habits_tracking_alert_time: request, user_id=%s, habit_id=%s, "
+        "alert_time=%s",
+        current_user.id,
+        alert_time.habit_id,
+        alert_time.alert_time,
+    )
+
+    try:
+        await update_habit_track_alert_time(
+            session=session,
+            user_id=current_user.id,
+            habit_id=alert_time.habit_id,
+            alert_time=alert_time.alert_time,
+        )
+    except HTTPException as exc:
+        logger.warning(
+            "update_habits_tracking_alert_time: failed, user_id=%s, habit_id=%s, "
+            "status=%s, detail=%r",
+            current_user.id,
+            alert_time.habit_id,
+            exc.status_code,
+            exc.detail,
+        )
+        raise
+
+    logger.info(
+        "update_habits_tracking_alert_time: success, user_id=%s, habit_id=%s",
+        current_user.id,
+        alert_time.habit_id,
     )
 
     return StatusResponse(result="ok")
@@ -116,13 +191,17 @@ async def update_habits_tracking_alert_time(
 @router.patch("/habits_tracking/count")
 async def update_habits_tracking_count():
     # обновить количество НЕАКТИВЕН
-    pass
+
+    logger.warning("update_habits_tracking_count: endpoint not implemented yet")
+    raise HTTPException(status_code=501, detail="Not implemented")
 
 
 @router.delete("/habits_tracking")
 async def delete_habits_tracking():
     # Удалить трекинг НЕАКТИВЕН
-    pass
+
+    logger.warning("delete_habits_tracking: endpoint not implemented yet")
+    raise HTTPException(status_code=501, detail="Not implemented")
 
 
 # count +1
@@ -144,8 +223,20 @@ async def habits_tracking_statistic_all(
     Доступ разрешён только авторизованным и активным пользователям.
     """
 
+    logger.info(
+        "habits_tracking_statistic_all: request, user_id=%s, username=%r",
+        current_user.id,
+        current_user.username,
+    )
+
     result: Sequence[Habits] = await get_habit_track_statistic_all(
         session=session, user_id=current_user.id
+    )
+
+    logger.info(
+        "habits_tracking_statistic_all: response, user_id=%s, habits_count=%s",
+        current_user.id,
+        len(result),
     )
 
     return HabitStatisticListOut(habits=result)
@@ -168,8 +259,33 @@ async def habits_tracking_statistic(
     Доступ разрешён только авторизованным и активным пользователям.
     """
 
+    logger.info(
+        "habits_tracking_statistic: request, user_id=%s, habit_id=%s",
+        current_user.id,
+        habit_id,
+    )
+
     result: Habits = await get_habit_track_statistic_from_habit_id(
         session=session, user_id=current_user.id, habit_id=habit_id
+    )
+
+    if result is None:
+        logger.warning(
+            "habits_tracking_statistic: habit not found, user_id=%s, habit_id=%s",
+            current_user.id,
+            habit_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The habit was not found or does not belong to the current user",
+        )
+
+    logger.info(
+        "habits_tracking_statistic: response, user_id=%s, habit_id=%s, "
+        "stats_count=%s",
+        current_user.id,
+        habit_id,
+        len(result.habit_tracking_statistics),
     )
 
     return HabitStatisticListOut(habits=[result])
